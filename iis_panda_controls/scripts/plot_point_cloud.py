@@ -8,7 +8,7 @@ from sklearn.decomposition import PCA
 xyz = np.load("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts/xyz.npy")
 rgb = np.load("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts/rgb.npy")
 
-xyz[:,2] = 1-xyz[:,2]
+xyz[:,2] = 1 - xyz[:,2]
 
 mean=np.mean(xyz, axis=0)
 
@@ -86,16 +86,14 @@ rgb_distances = np.sqrt((rgb[:,0])**2 + (rgb[:,1])**2 + (rgb[:,2])**2)
 bins = np.histogram(rgb_distances, bins=1000)
 background = bins[1][np.argmax(bins[0])]
 
-print(xyz.shape)
-
 xyz_planeless = []
 rgb_planeless = []
 # plane removal
 for i, (xyz_, rgb_) in enumerate(zip(xyz, rgb)):
-    if abs(background - rgb_dist(rgb_)) < 2:
-        if abs(xyz_[2] - mean[2]) > 10**-2:
-            xyz_planeless.append(xyz_)
-            rgb_planeless.append(rgb_)
+    #if abs(background - rgb_dist(rgb_)) < 2:
+    if abs(xyz_[2] - mean[2]) > 10**-2:
+        xyz_planeless.append(xyz_)
+        rgb_planeless.append(rgb_)
 
 
 xyz_planeless = np.array(xyz_planeless)
@@ -104,28 +102,28 @@ rgb_planeless = np.array(rgb_planeless)
 
 
 # DBSCAN 
-dbscan = DBSCAN(eps=0.05, min_samples=10)
-dbscan.fit(xyz_planeless)
+# dbscan = DBSCAN(eps=0.05, min_samples=10)
+# dbscan.fit(xyz_planeless)
 
-labels_set = set(dbscan.labels_)
+# labels_set = set(dbscan.labels_)
 
-objects = []
-obj_spartial_features = []
-for i in range(len(labels_set)):
-    objects.append([])
-for i, xyz_ in zip(dbscan.labels_, xyz_planeless):
-    objects[i].append(xyz_)
+# objects = []
+# obj_spartial_features = []
+# for i in range(len(labels_set)):
+#     objects.append([])
+# for i, xyz_ in zip(dbscan.labels_, xyz_planeless):
+#     objects[i].append(xyz_)
 
 ax = plt.axes(projection='3d')
-count = 0
-for obj in objects:
-    objects[count] = np.array(obj)
-    count += 1
-    c_points = primitive_bounding_box(obj)
-    plt_bounding_box(ax, c_points)
-    spat_features = bounding_box_spartial_features(obj)
-    print(spat_features)
-    # ax.scatter(spat_features[0][0], spat_features[0][1], spat_features[0][2])
+# count = 0
+# for obj in objects:
+#     objects[count] = np.array(obj)
+#     count += 1
+#     c_points = primitive_bounding_box(obj)
+#     plt_bounding_box(ax, c_points)
+#     spat_features = bounding_box_spartial_features(obj)
+#     print(spat_features)
+#     ax.scatter(spat_features[0][0], spat_features[0][1], spat_features[0][2])
 
 # plot pca axis: 
 # pca = PCA(n_components=2)
@@ -137,9 +135,11 @@ for obj in objects:
 # print(ax_line.shape)
 # ax_line2 = np.outer(t, pca.components_[1]) + np.array([-0.30003, 0.15004808])
 
-ax.set_box_aspect((np.ptp(xyz_planeless[:,0]),np.ptp(xyz_planeless[:,1]), np.ptp(xyz_planeless[:,2])))
-ax.scatter(xyz_planeless[:,0], xyz_planeless[:,1], xyz_planeless[:,2],c = dbscan.labels_ , s=0.01) 
-ax.scatter(objects[0][:,0], objects[0][:,1], objects[0][:,2], s=0.01)
+xyz_plot = xyz_planeless
+rgb_plot = rgb_planeless
+ax.set_box_aspect((np.ptp(xyz_plot[:,0]),np.ptp(xyz_plot[:,1]), np.ptp(xyz_plot[:,2])))
+ax.scatter(xyz_plot[:,0], xyz_plot[:,1], xyz_plot[:,2],c =  rgb_plot/255, s=0.01) #dbscan.labels_
+#ax.scatter(objects[0][:,0], objects[0][:,1], objects[0][:,2], s=0.01)
 
 # PCA Axis
 # ax.plot(ax_line[:,0], ax_line[:,1], np.ones(len(ax_line[:,1]))*0.06812, 'red')
