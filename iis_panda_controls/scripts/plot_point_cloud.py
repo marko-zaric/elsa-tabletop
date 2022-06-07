@@ -102,28 +102,28 @@ rgb_planeless = np.array(rgb_planeless)
 
 
 # DBSCAN 
-# dbscan = DBSCAN(eps=0.05, min_samples=10)
-# dbscan.fit(xyz_planeless)
+dbscan = DBSCAN(eps=0.05, min_samples=10)
+dbscan.fit(xyz_planeless)
 
-# labels_set = set(dbscan.labels_)
+labels_set = set(dbscan.labels_)
 
-# objects = []
-# obj_spartial_features = []
-# for i in range(len(labels_set)):
-#     objects.append([])
-# for i, xyz_ in zip(dbscan.labels_, xyz_planeless):
-#     objects[i].append(xyz_)
+objects = []
+obj_spartial_features = []
+for i in range(len(labels_set)):
+    objects.append([])
+for i, xyz_ in zip(dbscan.labels_, xyz_planeless):
+    objects[i].append(xyz_)
 
 ax = plt.axes(projection='3d')
-# count = 0
-# for obj in objects:
-#     objects[count] = np.array(obj)
-#     count += 1
-#     c_points = primitive_bounding_box(obj)
-#     plt_bounding_box(ax, c_points)
-#     spat_features = bounding_box_spartial_features(obj)
-#     print(spat_features)
-#     ax.scatter(spat_features[0][0], spat_features[0][1], spat_features[0][2])
+count = 0
+for obj in objects:
+    objects[count] = np.array(obj)
+    count += 1
+    c_points = primitive_bounding_box(obj)
+    plt_bounding_box(ax, c_points)
+    spat_features = bounding_box_spartial_features(obj)
+    print(spat_features)
+    ax.scatter(spat_features[0][0], spat_features[0][1], spat_features[0][2])
 
 # plot pca axis: 
 # pca = PCA(n_components=2)
@@ -138,7 +138,7 @@ ax = plt.axes(projection='3d')
 xyz_plot = xyz_planeless
 rgb_plot = rgb_planeless
 ax.set_box_aspect((np.ptp(xyz_plot[:,0]),np.ptp(xyz_plot[:,1]), np.ptp(xyz_plot[:,2])))
-ax.scatter(xyz_plot[:,0], xyz_plot[:,1], xyz_plot[:,2],c =  rgb_plot/255, s=0.01) #dbscan.labels_
+ax.scatter(xyz_plot[:,0], xyz_plot[:,1], xyz_plot[:,2],c = dbscan.labels_ , s=0.01) # rgb_plot/255
 #ax.scatter(objects[0][:,0], objects[0][:,1], objects[0][:,2], s=0.01)
 
 # PCA Axis
