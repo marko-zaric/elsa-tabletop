@@ -41,12 +41,6 @@
       <pose>0.4 -0.15 0.0 0 0 0.4</pose>
     </include>
 
-    <!-- <include>
-      <uri>model://dc</uri>
-      <name>camera</name>
-      <pose>0.4 0 1 0 1.57 0</pose>
-    </include> -->
-
     <physics type="ode">
       <real_time_update_rate>1000.0</real_time_update_rate>
     </physics>
