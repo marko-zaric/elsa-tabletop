@@ -40,6 +40,19 @@
       <uri>model://wood_cube_7_5cm</uri>
       <pose>0.4 -0.15 0.0 0 0 0.4</pose>
     </include>
+    
+    <include>
+      <name>brick1</name>
+      <uri>model://rectangle1</uri>
+      <pose>0.6 -0.2 0.0 0 0 0.5</pose>
+    </include>
+
+
+    <include>
+      <name>brick2</name>
+      <uri>model://rectangle1</uri>
+      <pose>0.7 0.2 0.0 0 0 1.7</pose>
+    </include>
 
     <physics type="ode">
       <real_time_update_rate>1000.0</real_time_update_rate>

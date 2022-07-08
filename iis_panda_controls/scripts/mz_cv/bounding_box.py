@@ -53,7 +53,7 @@ def is_object_circular(obj):
     #print("Total diff: ", total_diff)
     return total_diff < 0.2
 
-def convex_hull_bounding_box(obj):
+def convex_hull_bounding_box(obj, ax=None):
     pose_camera_frame = [0, 0, 0, 0] # x,y,z of center of bounding box; theta
     pose_fixed_frame = [0, 0, 0, 0]
     dimensions = [0, 0, 0] # x,y,z dimensions
@@ -61,7 +61,7 @@ def convex_hull_bounding_box(obj):
     points = np.array(obj)
     
     
-    min_z = np.min(points[:,2])
+    min_z = 0 #np.min(points[:,2])
     max_z = np.max(points[:,2])
     min_x = np.min(points[:,0])
     min_y = np.min(points[:,1])
@@ -122,7 +122,7 @@ def convex_hull_bounding_box(obj):
 
         # # rotate points and get center and dimensions
         R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-        points_rot = np.dot(R, (points2D).T).T
+        points_rot = np.dot(R, (points2D-pose_camera_frame[:2]).T).T + pose_camera_frame[:2]
 
         # determine center
         min_x = np.min(points_rot[:,0])
@@ -132,15 +132,16 @@ def convex_hull_bounding_box(obj):
 
         x_diff = max_x - min_x
         y_diff = max_y - min_y
-
+        # ax.scatter(points_rot[:,0],points_rot[:,1], s=1)
+        # ax.scatter(points2D[:,0],points2D[:,1], s=1, color="yellow")
     # store orientation
     pose_camera_frame[3] = theta
-
+    pose_fixed_frame[3] = np.pi/2 - theta 
     # dimensions
     dimensions[0] = x_diff
     dimensions[1] = y_diff
-    dimensions[2] = max_z
-
+    dimensions[2] = z_diff
+    #print(pose_fixed_frame[3])
     return (pose_camera_frame, dimensions)
     
 
@@ -183,7 +184,7 @@ def bounding_box_spartial_features(object, ax=None):
     pose_camera_frame[1] = min_y + dimensions[1]/2
     pose_camera_frame[2] = min_z + dimensions[2]/2
 
-    ax_line, ax_line2, ax1, ax2 = bounding_box_axis(object, [pose_camera_frame[0], pose_camera_frame[1]])
+    ax_line, ax_line2, ax1, ax2 = bounding_box_diagonals(object, [pose_camera_frame[0], pose_camera_frame[1]])
 
     theta = convex_hull_bounding_box(object, ax)
 
@@ -235,7 +236,24 @@ def primitive_bounding_box(object):
     return corner_points
 
 
-def plt_bounding_box(ax, corner_points):
-    ax.scatter(corner_points[:,0], corner_points[:,1], corner_points[:,2], marker='^')
+def plt_bounding_box(ax, pose, dimensions):
+    print(dimensions)
+    print(pose)
+    # Calculate Cornerpoints
+    unrotated_points = []
+    unrotated_points.append(np.array([pose[0] + (dimensions[0]/2), pose[1] + (dimensions[1]/2), pose[2] + (dimensions[2]/2)])) #p_left_up_top    
+    unrotated_points.append(np.array([pose[0] - (dimensions[0]/2), pose[1] + (dimensions[1]/2), pose[2] + (dimensions[2]/2)])) #p_right_up_top   
+    unrotated_points.append(np.array([pose[0] + (dimensions[0]/2), pose[1] - (dimensions[1]/2), pose[2] + (dimensions[2]/2)])) #p_left_down_top  
+    unrotated_points.append(np.array([pose[0] - (dimensions[0]/2), pose[1] - (dimensions[1]/2), pose[2] + (dimensions[2]/2)])) #p_right_down_top 
+    unrotated_points.append(np.array([pose[0] + (dimensions[0]/2), pose[1] + (dimensions[1]/2), pose[2] - (dimensions[2]/2)])) #p_left_up_bottom
+    unrotated_points.append(np.array([pose[0] - (dimensions[0]/2), pose[1] + (dimensions[1]/2), pose[2] - (dimensions[2]/2)])) #p_right_up_bottom
+    unrotated_points.append(np.array([pose[0] + (dimensions[0]/2), pose[1] - (dimensions[1]/2), pose[2] - (dimensions[2]/2)])) #p_left_down_bottom
+    unrotated_points.append(np.array([pose[0] - (dimensions[0]/2), pose[1] - (dimensions[1]/2), pose[2] - (dimensions[2]/2)])) #p_right_down_bottom
+    unrotated_points = np.array(unrotated_points)
+    theta = -pose[3]
+    R = np.array([[np.cos(theta), -np.sin(theta), 0], [np.sin(theta), np.cos(theta), 0], [0, 0, 1]])
+    corner_points = np.dot(R, (unrotated_points-pose[:3]).T).T + pose[:3]
+    ax.scatter(corner_points[:,0], corner_points[:,1], corner_points[:,2], marker='^')   
+    
 
 

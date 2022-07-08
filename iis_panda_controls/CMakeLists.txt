@@ -21,5 +21,5 @@ catkin_package(
 )
 
 catkin_python_setup()
-catkin_install_python(PROGRAMS scripts/joint_command_publisher.py scripts/read_cartesian_pose.py scripts/read_camera.py scripts/move_to_neutral.py
+catkin_install_python(PROGRAMS scripts/joint_command_publisher.py scripts/read_cartesian_pose.py scripts/read_camera.py scripts/move_to_neutral.py scripts/benchmark_perception.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

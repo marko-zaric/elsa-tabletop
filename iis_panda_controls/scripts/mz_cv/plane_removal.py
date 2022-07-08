@@ -1,6 +1,6 @@
 import numpy as np
-
-def plane_removal(xyz, rgb):
+import time
+def plane_removal(xyz, rgb, tol):
     xyz_planeless = []
     rgb_planeless = []
 
@@ -12,12 +12,15 @@ def plane_removal(xyz, rgb):
     
     # plane removal
     mean=np.mean(xyz, axis=0)
+    # st = time.time()
     for(xyz_, rgb_) in zip(xyz, rgb):
         #if abs(background - rgb_dist(rgb_)) < 2:
-        if abs(xyz_[2] - mean[2]) > 10**-2:
+        if abs(xyz_[2] - mean[2]) > tol:
             xyz_planeless.append(xyz_)
             rgb_planeless.append(rgb_)
-
+    # et = time.time()
+    # elapsed_time = et - st
+    # print('Execution time inside plane removal:', elapsed_time, 'seconds')
     xyz_planeless = np.array(xyz_planeless)
     rgb_planeless = np.array(rgb_planeless)
     return xyz_planeless, rgb_planeless
