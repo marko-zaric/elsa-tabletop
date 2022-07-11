@@ -1,52 +1,28 @@
 import rospy
 from rospkg import RosPack
 import xacro
-from geometry_msgs.msg import Pose, PointStamped, Point, WrenchStamped
-from std_srvs.srv import Empty, SetBool
-from gazebo_msgs.srv import SpawnModel, DeleteModel, SetModelState, SetModelStateRequest, ApplyBodyWrench, ApplyBodyWrenchRequest, BodyRequest, BodyRequestRequest
-from gazebo_msgs.msg import ModelStates
-from visualization_msgs.msg import Marker
-from sensor_msgs.msg import JointState, Image
-from std_msgs.msg import String, Bool, Int32
+from geometry_msgs.msg import Pose
+from gazebo_msgs.srv import SpawnModel, DeleteModel
 
 import sys
 import argparse
 import numpy as np
-from copy import deepcopy
-import logging
-import traceback
 import random
 from os.path import join
 import threading
-import json
 
 # cmd arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--episodes', type=int, default=100, help='Number trials per episode')
+parser.add_argument('--scenes', type=int, default=100, help='Number scenes to test')
 FLAGS = parser.parse_args()
 
 # globals
-all_models = ['rectangle1', 'coke_can', 'wood_cube_7_5cm', 'wood_cube_5cm']
+all_models = ["coke_can"] #['cylinder', 'box', 'sphere'] #['rectangle1', 'coke_can', 'wood_cube_7_5cm', 'wood_cube_5cm']
 pose = Pose()
 pose_lock = None
 model_spawner = None
 model_remover = None
-current_model = None
-recorder = None
-reset_recorder = None
-object_notifier = None
-episode_notifier = None
-trial_notifier = None
-obj_info_processor = None
-contact_info_processor = None
-force_info_processor = None
-duration_info_processor = None
-model_setter = None
-body_setter = None
-rp = None
-waiter = None
-wait = True
-object_at_rest = True
+current_models = []
 
 def randomize_model(model_urdf_xacro):
     # Process the file once using xacro to retrieve arguments
@@ -77,10 +53,8 @@ def randomize_model(model_urdf_xacro):
 def randomize_model_pose():
     global pose
 
-    translator_x = np.random.uniform(-0.05, 0.05)
-    translator_y = np.random.uniform(-0.05, 0.05)
-    pose.position.x = np.random.uniform(0.7, 0.9) + translator_x
-    pose.position.y = np.random.uniform(0.7, 0.9) + translator_y
+    pose.position.x = np.random.uniform(0.1, 0.9)
+    pose.position.y = np.random.uniform(-0.7, 0.7)
     pose.position.z = 0.8
     pose.orientation.w = 1.0
     pose.orientation.x = 0.0
@@ -88,69 +62,62 @@ def randomize_model_pose():
     pose.orientation.z = 0.0
 
 
-def spawn_model():
-    global current_model
+def spawn_scene():
+    global current_models
 
-    current_model = random.choice(all_models)
-    #object_notifier.publish(current_model)
-    rospy.loginfo('Preparing to spawn model: {0}'.format(current_model))
-    model_urdf_xacro = join("/home/marko/.gazebo/models/", current_model, 'model.urdf.xacro')
-    randomize_model_pose()
-    #model_xml, opts = randomize_model(model_urdf_xacro)
+    num_of_models_in_scene = np.random.randint(1, 5)
 
-    try:
-        model_spawner(current_model, join("/home/marko/.gazebo/models/", current_model, '/model.sdf'), "/", pose, 'world')
-    except rospy.ServiceException as e:
-        rospy.logerr('Spawn model service call failed: {0}'.format(e))
-
-    rospy.loginfo('Model spawned')
-
-    #pose update
-    rospy.loginfo('Awaiting pose update')
-    rospy.sleep(10.0)
-
-    obj_info_processor.publish(model_xml)
-
-    return opts
+    for i in range(1): #num_of_models_in_scene):
+        current_model = random.choice(all_models)
+        current_models.append(current_model)
+        rospy.loginfo('Preparing to spawn model: {0}'.format(current_model))
+        print(join("/home/marko/.gazebo/models/objects", current_model, 'model.urdf.xacro')) 
+        model_urdf_xacro = join("/home/marko/.gazebo/models/objects", current_model, 'model.urdf.xacro')
+        randomize_model_pose()
+        model_xml, opts = randomize_model(model_urdf_xacro)
 
 
-def delete_model():
-    rospy.loginfo('Preparing to delete model: {0}'.format(current_model))
-    try:
-        while True:
-            resp_delete = model_remover(current_model)
-            rospy.loginfo(resp_delete.status_message)
-            if resp_delete.success == True:
-                break
-            rospy.sleep(1.0)            
-    except rospy.ServiceException as e:
-        rospy.logerr('Delete model service call failed: {0}'.format(e))
+        try:
+            model_spawner(current_model, model_xml, "/", pose, 'world')
+        except rospy.ServiceException as e:
+            rospy.logerr('Spawn model service call failed: {0}'.format(e))
+        out_msg = 'Model spawned ' + str(i+1) + ' of ' + str(num_of_models_in_scene)
+        rospy.loginfo(out_msg)
 
-    rospy.loginfo('Model deleted')
+    return 
 
 
-def generate_episode(episode):
-    print("ERRRRRRRRRR")
-    pass
-    global wait, object_at_rest
+def delete_scene():
+    global current_models
 
-    trial = 1
+    for model in current_models:
+        rospy.loginfo('Preparing to delete model: {0}'.format(model))
+        try:
+            while True:
+                resp_delete = model_remover(model)
+                rospy.loginfo(resp_delete.status_message)
+                if resp_delete.success == True:
+                    break
+                rospy.sleep(1.0)            
+        except rospy.ServiceException as e:
+            rospy.logerr('Delete model service call failed: {0}'.format(e))
 
-    opts = spawn_model()
-    episode_notifier.publish(episode)
+        rospy.loginfo('Model deleted')
 
-    
 
-    delete_model()
+def new_scene(scene):
+    spawn_scene()
+    #delete_scene()
 
 
 if __name__ == '__main__':
 
     rospy.init_node('elsa_perception_benchmark')
     pose_lock = threading.Lock()
-    episode = 0  
+    scene = 0  
 
     #gazebo
+    #model_spawner = rospy.ServiceProxy('/gazebo/spawn_urdf_model', SpawnModel)
     model_spawner = rospy.ServiceProxy('/gazebo/spawn_urdf_model', SpawnModel)
     model_remover = rospy.ServiceProxy('/gazebo/delete_model', DeleteModel)
     model_spawner.wait_for_service()
@@ -160,14 +127,14 @@ if __name__ == '__main__':
     rp = RosPack()
 
 
-    rospy.loginfo('Perception Benchmarking with %d scenarios' % (FLAGS.episodes))
+    rospy.loginfo('Perception Benchmarking with %d scenarios' % (FLAGS.scenes))
 
-    while not rospy.is_shutdown() and episode <= FLAGS.episodes:
+    while not rospy.is_shutdown() and scene <= FLAGS.scenes:
         rospy.sleep(2.0)
         rospy.logwarn('---------------------')
-        rospy.loginfo('Episode: {0}'.format(episode))
-        generate_episode(episode)
-        episode+=1
-        rospy.loginfo('Episode over')
+        rospy.loginfo('Scene: {0}'.format(scene))
+        new_scene(scene)
+        scene+=1
+        rospy.loginfo('Scene over')
 
     rospy.loginfo('Done.')
