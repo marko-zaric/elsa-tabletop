@@ -3,6 +3,7 @@ import itertools
 from sklearn.decomposition import PCA
 from scipy.spatial import ConvexHull
 from sklearn.cluster import DBSCAN
+from matplotlib import pyplot as plt
 
 # Camera Frame to Panda Frame 
 T = np.matrix([[0, 1, 0, 0.5125],
@@ -76,8 +77,9 @@ def convex_hull_bounding_box(obj, ax=None):
     # pose z 
     pose_camera_frame[2] = min_z + z_diff/2
     theta = None
-
-    if is_object_circular(obj):
+    theta2 = 0.0
+    obj_is_circular = is_object_circular(obj)
+    if obj_is_circular:
         theta = 0
 
         # determine center
@@ -119,6 +121,20 @@ def convex_hull_bounding_box(obj, ax=None):
 
         theta = np.arccos(np.dot(x,edge)) 
         
+        orig = np.random.randn(2)
+        orig -= orig.dot(edge) * edge
+        orig /= np.linalg.norm(orig)
+
+        if orig[0] >= 0 and orig[1] >= 0:
+            x = np.array([0, 1])
+        elif orig[0] >= 0 and orig[1] < 0:
+            x = np.array([1, 0])
+        elif orig[0] < 0 and orig[1] < 0:
+            x = np.array([0, -1])
+        else:
+            x = np.array([-1, 0])
+
+        theta2 = np.arccos(np.dot(x,orig)) 
 
         # # rotate points and get center and dimensions
         R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
@@ -134,15 +150,25 @@ def convex_hull_bounding_box(obj, ax=None):
         y_diff = max_y - min_y
         # ax.scatter(points_rot[:,0],points_rot[:,1], s=1)
         # ax.scatter(points2D[:,0],points2D[:,1], s=1, color="yellow")
+    center = np.array(pose_camera_frame)
+    center[3] = 1
+    pose_fixed_frame = np.ravel(np.matmul(T, center))
+    
     # store orientation
     pose_camera_frame[3] = theta
-    pose_fixed_frame[3] = np.pi/2 - theta 
+    pose_fixed_frame[3] = np.pi/2 - theta2
+    if obj_is_circular:
+        pose_fixed_frame[3] = 0 
+
+    # print(np.pi/2 - theta2)
+    # print(np.pi - theta2)
+
     # dimensions
     dimensions[0] = x_diff
     dimensions[1] = y_diff
     dimensions[2] = z_diff
-    #print(pose_fixed_frame[3])
-    return (pose_camera_frame, dimensions)
+
+    return (pose_camera_frame, pose_fixed_frame, dimensions)
     
 
 
@@ -236,9 +262,9 @@ def primitive_bounding_box(object):
     return corner_points
 
 
-def plt_bounding_box(ax, pose, dimensions):
-    print(dimensions)
-    print(pose)
+def plt_bounding_box(ax, pose, dimensions, label):
+    # print(dimensions)
+    # print(pose)
     # Calculate Cornerpoints
     unrotated_points = []
     unrotated_points.append(np.array([pose[0] + (dimensions[0]/2), pose[1] + (dimensions[1]/2), pose[2] + (dimensions[2]/2)])) #p_left_up_top    
@@ -253,7 +279,8 @@ def plt_bounding_box(ax, pose, dimensions):
     theta = -pose[3]
     R = np.array([[np.cos(theta), -np.sin(theta), 0], [np.sin(theta), np.cos(theta), 0], [0, 0, 1]])
     corner_points = np.dot(R, (unrotated_points-pose[:3]).T).T + pose[:3]
-    ax.scatter(corner_points[:,0], corner_points[:,1], corner_points[:,2], marker='^')   
+    labels = ["can1", "can2", "panda", "cube7.5cm", "brick2", "brick1", "cube5cm", "unidentified"]
+    ax.scatter(corner_points[:,0], corner_points[:,1], corner_points[:,2], marker='^', label=labels[label])   
     
 
 

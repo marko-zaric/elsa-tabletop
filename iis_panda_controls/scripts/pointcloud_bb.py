@@ -20,7 +20,7 @@ def pointcloudBB(xyz, rgb, ax = None):
     #xyz, rgb = plane_removal(xyz, rgb, 10**-2)
     #benchmark.append(time.time())
     
-    dbscan = DBSCAN(eps=0.01, min_samples=6)
+    dbscan = DBSCAN(eps=0.02, min_samples=6)
     dbscan.fit(xyz)
 
     labels_set = set(dbscan.labels_)
@@ -35,16 +35,17 @@ def pointcloudBB(xyz, rgb, ax = None):
         objects[i].append(xyz_)
     benchmark.append(time.time())
     
-
+    object_bounding_boxes = []
     # --- Bounding Boxes ---
-    for obj_num in range(7):
-        #obj_num = 0
-        #points = np.array(objects[obj_num])
-        pose, dimensions = convex_hull_bounding_box(objects[obj_num])
-        print(pose, "////", dimensions)
+    labels = ["can1", "can2", "panda", "cube7.5cm", "brick2", "brick1", "cube5cm", "unidentified"]
+    for obj_num in range(len(objects)):
+        print(labels[obj_num])
+        pose_cam, pose_fixed, dimensions = convex_hull_bounding_box(objects[obj_num])
 
+        print(list(pose_fixed) + dimensions)
+        object_bounding_boxes.append(list(pose_fixed) + dimensions)
         if ax != None:
-            plt_bounding_box(ax, pose, dimensions)
+            plt_bounding_box(ax, pose_cam, dimensions, label=obj_num)
     benchmark.append(time.time())
 
     # for i in range(len(benchmark)-1):
@@ -52,7 +53,9 @@ def pointcloudBB(xyz, rgb, ax = None):
 
     if ax != None:
         ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2],c = dbscan.labels_, s=0.01)
+        plt.legend()
         plt.show()  
+    return object_bounding_boxes
 
  
 if __name__ == '__main__':

@@ -4,6 +4,11 @@ import numpy as np
 import random
 from itertools import product
 
+deg = 100
+
+print((deg/360) * 2*np.pi)
+exit()
+
 r = R.from_euler('xyz', [0, 0, np.pi/2])
 
 print(r.as_quat())
