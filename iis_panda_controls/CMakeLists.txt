@@ -8,8 +8,27 @@ find_package(catkin REQUIRED COMPONENTS
     franka_moveit
     panda_sim_moveit
     panda_gazebo
-    iis_panda_controls
+    std_msgs
+    message_generation
 )
+
+add_message_files(
+  FILES
+  BoundingBox.msg
+  BB_Scene.msg
+)
+
+catkin_python_setup()
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+catkin_install_python(PROGRAMS scripts/model_states_read.py scripts/joint_command_publisher.py scripts/read_cartesian_pose.py scripts/read_camera.py scripts/move_to_neutral.py scripts/benchmark_perception.py
+                      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+
 
 catkin_package(
   CATKIN_DEPENDS
@@ -20,7 +39,3 @@ catkin_package(
     panda_sim_moveit
     panda_gazebo
 )
-
-catkin_python_setup()
-catkin_install_python(PROGRAMS scripts/model_states_read.py scripts/joint_command_publisher.py scripts/read_cartesian_pose.py scripts/read_camera.py scripts/move_to_neutral.py scripts/benchmark_perception.py
-                      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

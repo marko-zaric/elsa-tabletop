@@ -1,13 +1,11 @@
 import rospy
 import sys
+from tomlkit import string
 sys.path.append("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts")
-from pointcloud_bb import pointcloudBB
 import xacro
 import gazebo_msgs
 from geometry_msgs.msg import Pose
 from gazebo_msgs.srv import SpawnModel
-from franka_core_msgs.msg import JointCommand
-from sensor_msgs.msg import JointState
 import argparse
 import numpy as np
 import random
@@ -19,17 +17,21 @@ import numpy as np
 from itertools import product
 import random
 import copy
-from sensor_msgs.point_cloud2 import PointCloud2
-import sensor_msgs.point_cloud2 as pc2
-import time
-import ctypes
-import struct
+from iis_panda_controls.msg import BB_Scene
+import csv
+from datetime import datetime
+
 
 
 # cmd arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--scenes', type=int, default=1, help='Number scenes to test')
+parser.add_argument('--out_folder', type=string, default='/home/marko/Desktop/IIS_Research/benchmarking/', help='Folder where the simulation output will be stored')
 FLAGS = parser.parse_args()
+
+# benchmark results
+CSV_FILE = open(FLAGS.out_folder + str(datetime.now())+ '.csv', 'w')
+CSV_WRITER = csv.writer(CSV_FILE)
 
 # globals
 # all_models = #['cylinder', 'box', 'sphere']
@@ -37,7 +39,7 @@ pose = Pose()
 pose_lock = None
 model_spawner = None
 
-POSE_INFO = None
+# POSE_INFO = None
 
 publish_rate = 100
 
@@ -46,13 +48,16 @@ neutral_position = [-0.34229236109164773, -1.3855501963161174, -0.67342782545539
 CURRENT_POSITION = None
 BOUNDING_BOXES = None
 COMPUTATION_TIME = None
+OBSERVED = 0 # 0 = make new scene, 1= waiting to be observed, 2 process observation
+OBJECT_LIST = ["can1", "can2", "brick1", "brick2", "cube_small", "cube_large"]
 
-OBJ_DIMENSIONS = {'can1':[0.06701,0.06701, 0,1239],
-                'can2':[0.06701,0.06701, 0,1239],
+
+OBJ_DIMENSIONS = {'can1':[0.06701,0.06701, 0.1239],
+                'can2':[0.06701,0.06701, 0.1239],
                 'brick1':[0.06, 0.12, 0.07],
                 'brick2':[0.06, 0.12, 0.07],
-                'wood_cube_5cm':[0.05, 0.05, 0.05],
-                'wood_cube_7_5cm':[0.075, 0.075, 0.075]}
+                'cube_small':[0.05, 0.05, 0.05],
+                'cube_large':[0.075, 0.075, 0.075]}
 
 
 OUT_OF_FRAME_POSE = [[2.0,2.0], [2.0, -2.0], [-2.0, -2.0], [-2.0, 2.0], [2.5, 2.5], [2.0, 2.5]]
@@ -61,79 +66,11 @@ y_grid = [-0.15, 0, 0.15, 0.3]
 x_grid = [0.2, 0.35, 0.5, 0.65]
 XY_GRID = list(product(x_grid, y_grid))
 
-def _on_robot_state(msg):
-    """
-        Callback function for updating joint_states
-    """
-    global CURRENT_POSITION
-    CURRENT_POSITION = msg.position[2:]
 
-
-def move_to_neutral():
-    
-    # create joint command message and fix its type to joint torque mode
-    command_msg = JointCommand()
-    command_msg.names = ['panda_joint1','panda_joint2','panda_joint3',\
-        'panda_joint4','panda_joint5','panda_joint6','panda_joint7']
-    command_msg.mode = JointCommand.POSITION_MODE
-    command_msg.position = neutral_position
-    
-    # Also create a publisher to publish joint commands
-    joint_command_publisher = rospy.Publisher(
-            'panda_simulator/motion_controller/arm/joint_commands',
-            JointCommand,
-            tcp_nodelay=True,
-            queue_size=1)
-
-    robot_state_sub = rospy.Subscriber(
-        'joint_states',
-        JointState,
-        _on_robot_state,
-        queue_size=1,
-        tcp_nodelay=True)
-
-    # wait for messages to be populated before proceeding
-    rospy.loginfo("Subscribing to robot state topics...")
-    while (True):
-        if not (CURRENT_POSITION is None):
-            break
-    rospy.loginfo("Recieved messages; Starting Move.")
-
-    while np.linalg.norm(np.array(CURRENT_POSITION) - np.array(neutral_position)) > 10**-2:
-        joint_command_publisher.publish(command_msg)
-        print(np.linalg.norm(np.array(CURRENT_POSITION) - np.array(neutral_position)))
-        print(np.array(CURRENT_POSITION))
-        print(np.array(neutral_position))
-        if np.linalg.norm(np.array(CURRENT_POSITION[:3]) - np.array(neutral_position[:3])) < 10**-2 and np.linalg.norm(np.array(CURRENT_POSITION[4:]) - np.array(neutral_position[4:])) < 10**-2:
-            break
-        rate.sleep()
 
 def read_camera(data):
-    global BOUNDING_BOXES, COMPUTATION_TIME
-    gen = pc2.read_points(data, skip_nans=True, field_names=("x", "y", "z", "rgb"))
-    count_points = 0
-    xyz = np.zeros((data.width, 3))
-    rgb = np.zeros((data.width, 3))
-    st = time.time()
-    for point in gen:
-        rgb_float = point[3]
-        # # cast float32 to int so that bitwise operations are possible
-        s = struct.pack('>f' ,rgb_float)
-        i = struct.unpack('>l',s)[0]
-        # # you can get back the float value by the inverse operations
-        pack = ctypes.c_uint32(i).value
- 
-        r = (pack & 0x00FF0000)>> 16
-        g = (pack & 0x0000FF00)>> 8
-        b = (pack & 0x000000FF)
-
-        xyz[count_points, :3] = [point[0], point[1], point[2]]
-        rgb[count_points, :3] = [r, g, b]
-        count_points += 1
-
-    BOUNDING_BOXES = pointcloudBB(xyz, rgb)
-    et = time.time()
-    COMPUTATION_TIME = et - st
+    global BOUNDING_BOXES, COMPUTATION_TIME, OBSERVE
+    BOUNDING_BOXES = data.boundingboxes
 
 
 def randomize_model(model_urdf_xacro):
@@ -199,11 +136,9 @@ def spawn_scene():
 
     return 
 
-def move_out_of_frame(POSE_INFO):
+def move_out_of_frame():
     out_of_frame_poses = 0
-    for i, name in enumerate(POSE_INFO.name):
-        if name == 'ground_plane' or name == 'panda':
-            continue
+    for name in OBJECT_LIST:
         state_msg = ModelState()
         state_msg.pose.position.x = OUT_OF_FRAME_POSE[out_of_frame_poses][0]
         state_msg.pose.position.y = OUT_OF_FRAME_POSE[out_of_frame_poses][1]
@@ -222,15 +157,14 @@ def move_out_of_frame(POSE_INFO):
         except rospy.ServiceException as e:
             print ("Service call failed:", e)
 
-def new_scene(POSE_INFO):
+def new_scene():
+    new_poses = dict()
     xy_grid = copy.copy(XY_GRID)
-    in_frame = np.ones(7)#np.random.randint(low=0, high=2, size=7)
-    euler_z_angle = np.random.random(size=7) * 2*np.pi
-    print("winkel: ", euler_z_angle)
-    move_out_of_frame(POSE_INFO)
-    for i, name in enumerate(POSE_INFO.name):
-        if name == 'ground_plane' or name == 'panda':
-            continue
+    in_frame = np.random.randint(low=0, high=2, size=7)
+    euler_z_angle = np.random.random(size=7) * np.pi
+    #print("winkel: ", euler_z_angle)
+    move_out_of_frame()
+    for i, name in enumerate(OBJECT_LIST):
         state_msg = ModelState()
         if in_frame[i] != 0:
             xy = random.choice(xy_grid)
@@ -238,7 +172,7 @@ def new_scene(POSE_INFO):
             r = R.from_euler('xyz', [0, 0, euler_z_angle[i]])
             orientation = r.as_quat()
             state_msg.model_name = name
-            print(name, euler_z_angle[i] % np.pi)
+            #print(name, euler_z_angle[i] % np.pi)
             state_msg.pose.position.x = xy[0]
             state_msg.pose.position.y = xy[1]
             state_msg.pose.position.z = 0.01
@@ -251,33 +185,47 @@ def new_scene(POSE_INFO):
             try:
                 set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
                 resp = set_state( state_msg )
+                new_poses[name] = [state_msg.pose,  euler_z_angle[i]]
             except rospy.ServiceException as e:
                 print ("Service call failed:", e)
+    return new_poses
 
         
 
-def model_pose_tracker(data):
-    global POSE_INFO
-    POSE_INFO = data
+# def model_pose_tracker(data):
+#     global POSE_INFO
+#     POSE_INFO = data
 
         
-def evaluate(pose_ground_truth, bb_camera, comp_time):
-    ary_bbs = np.array(bb_camera)
-    
-    
-    for i, name in enumerate(pose_ground_truth.name):
-        if name == 'ground_plane' or name == 'panda':
-            continue
-        if np.abs(pose_ground_truth.pose[i].position.x) > 1:
+def evaluate(new_poses, bb_camera, comp_time, scene):
+    global CSV_WRITER
+    # print(bb_camera)
+    # print(len(bb_camera)-1)
+    for pose in new_poses:
+        if np.abs(new_poses[pose][0].position.x) > 1:
             # out of view 
             continue
-        print(pose_ground_truth.name[i])
-        # print(pose_ground_truth.pose[i])
+        print(pose)
+        # print(new_poses[pose][0].position.x, "/", new_poses[pose][0].position.y)
         # find closest object 
-        diff_x = np.abs(ary_bbs[:,:1].T[0] - pose_ground_truth.pose[i].position.x)
-        diff_y = np.abs(ary_bbs[:,1:2].T[0] - pose_ground_truth.pose[i].position.y)
-        cam_pose = bb_camera[np.argmin(diff_x + diff_y)]
-        print(cam_pose[3])
+        min_index = 0
+        min_diff = 1000
+        for i, cam_pose in enumerate(bb_camera):
+            diff = np.abs(cam_pose.x - new_poses[pose][0].position.x) + np.abs(cam_pose.y - new_poses[pose][0].position.y)
+            if diff < min_diff:
+                min_diff = diff
+                min_index = i
+
+        if pose.startswith("can"):
+            angle = 0.0
+        else:
+            angle = new_poses[pose][1]
+
+        CSV_WRITER.writerow([scene, pose, new_poses[pose][0].position.x, new_poses[pose][0].position.y, new_poses[pose][0].position.z,
+                            angle, OBJ_DIMENSIONS[pose][0], OBJ_DIMENSIONS[pose][1], 
+                            OBJ_DIMENSIONS[pose][2], bb_camera[min_index].x, bb_camera[min_index].y, bb_camera[min_index].z,
+                            bb_camera[min_index].phi, bb_camera[min_index].dx, bb_camera[min_index].dy, bb_camera[min_index].dz])   
+
         
         
         
@@ -288,15 +236,8 @@ if __name__ == '__main__':
     rospy.init_node('elsa_perception_benchmark')
     rate = rospy.Rate(10)
 
-    # move panda to neutral
-    try:
-        move_to_neutral()
-    except rospy.ROSInterruptException as e:
-        rospy.logerr("Could not move to neutral! ", e) 
-        rospy.signal_shutdown("Error Shutdown")
-
-    rospy.Subscriber("/gazebo/model_states", gazebo_msgs.msg.ModelStates, queue_size=1, callback=model_pose_tracker)
-    rospy.Subscriber("/downsample/output", PointCloud2, callback=read_camera)
+    # rospy.Subscriber("/gazebo/model_states", gazebo_msgs.msg.ModelStates, queue_size=1, callback=model_pose_tracker)
+    rospy.Subscriber("/bounding_boxes",BB_Scene , queue_size=1, callback=read_camera)
     scene = 0 
 
 
@@ -306,19 +247,24 @@ if __name__ == '__main__':
 
     rospy.loginfo('Perception Benchmarking with %d scenarios' % (FLAGS.scenes))
     #spawn_scene()
-
+    count_msgs = 0
     # evaluation loop
-    while not rospy.is_shutdown() and scene < FLAGS.scenes:
-        rospy.sleep(1)
-        rospy.logwarn('---------------------')
-        rospy.loginfo('Scene: {0}'.format(scene+1))
-        new_scene(POSE_INFO)
-        snapshot_pose_info = POSE_INFO
-        snapshot_bb = copy.copy(BOUNDING_BOXES)
-        snapshot_computation_time = COMPUTATION_TIME
-        evaluate(snapshot_pose_info, snapshot_bb, snapshot_computation_time)
-        scene+=1
-        rospy.loginfo('Scene over')
-    
+    while not rospy.is_shutdown() and scene < FLAGS.scenes:  
+        if count_msgs == 0:
+            rospy.logwarn('---------------------')
+            rospy.loginfo('Scene: {0}'.format(scene+1))
+            new_poses = new_scene()
+            count_msgs += 1
+        elif count_msgs < 4:
+            rospy.wait_for_message("/bounding_boxes", BB_Scene)
+            count_msgs += 1
+        else:
+            snapshot_bb = copy.copy(BOUNDING_BOXES)
+            snapshot_computation_time = COMPUTATION_TIME
+            evaluate(new_poses, snapshot_bb, snapshot_computation_time, scene)
+            scene+=1
+            rospy.loginfo('Scene over')
+            count_msgs = 0
 
+    CSV_FILE.close()
     rospy.loginfo('Done.')

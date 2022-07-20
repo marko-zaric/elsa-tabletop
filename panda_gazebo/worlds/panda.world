@@ -32,11 +32,13 @@
     </include>
 
     <include>
+      <name>cube_small</name>
       <uri>model://wood_cube_5cm</uri>
       <pose>0.3 -0.3 0.0 0 0 0.7</pose>
     </include>
 
     <include>
+      <name>cube_large</name>
       <uri>model://wood_cube_7_5cm</uri>
       <pose>0.4 -0.15 0.0 0 0 0.4</pose>
     </include>
