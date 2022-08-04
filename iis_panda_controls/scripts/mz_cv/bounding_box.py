@@ -279,8 +279,8 @@ def plt_bounding_box(ax, pose, dimensions, label):
     theta = -pose[3]
     R = np.array([[np.cos(theta), -np.sin(theta), 0], [np.sin(theta), np.cos(theta), 0], [0, 0, 1]])
     corner_points = np.dot(R, (unrotated_points-pose[:3]).T).T + pose[:3]
-    labels = ["can1", "can2", "panda", "cube7.5cm", "brick2", "brick1", "cube5cm", "unidentified"]
-    ax.scatter(corner_points[:,0], corner_points[:,1], corner_points[:,2], marker='^', label=labels[label])   
+    # labels = ["can1", "can2", "panda", "cube7.5cm", "brick2", "brick1", "cube5cm", "unidentified"]
+    ax.scatter(corner_points[:,0], corner_points[:,1], corner_points[:,2], marker='^', label=label)   
     
 
 

@@ -59,29 +59,28 @@ def listener():
         gen = pc2.read_points(DATA_CALLBACK, skip_nans=True, field_names=("x", "y", "z", "rgb"))
         count_points = 0
         xyz = np.zeros((DATA_CALLBACK.width, 3))
-        # rgb = np.zeros((DATA_CALLBACK.width, 3))
+        rgb = np.zeros((DATA_CALLBACK.width, 3))
         for point in gen:
-            # rgb_float = point[3]
+            rgb_float = point[3]
             # # cast float32 to int so that bitwise operations are possible
-            # s = struct.pack('>f' ,rgb_float)
-            # i = struct.unpack('>l',s)[0]
+            s = struct.pack('>f' ,rgb_float)
+            i = struct.unpack('>l',s)[0]
 
 
             # # you can get back the float value by the inverse operations
-            # pack = ctypes.c_uint32(i).value
+            pack = ctypes.c_uint32(i).value
     
-            # r = (pack & 0x00FF0000)>> 16
-            # g = (pack & 0x0000FF00)>> 8
-            # b = (pack & 0x000000FF)
+            r = (pack & 0x00FF0000)>> 16
+            g = (pack & 0x0000FF00)>> 8
+            b = (pack & 0x000000FF)
 
             xyz[count_points, :3] = [point[0], point[1], point[2]]
-            # rgb[count_points, :3] = [r, g, b]
+            rgb[count_points, :3] = [r, g, b]
 
             count_points += 1
 
-        # np.save("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts/xyz.npy", xyz)
-        # np.save("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts/rgb", rgb)
-  
+        np.save("/home/marko/Desktop/IIS_Research/xyz.npy", xyz)
+        np.save("/home/marko/Desktop/IIS_Research/rgb.npy", rgb)
 
         SCENE = ArrayToBBScene(pointcloudBB(xyz))
         

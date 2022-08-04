@@ -9,7 +9,8 @@ from franka_core_msgs.msg import EndPointState, JointCommand, RobotState
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("position", help="Moves robot arm to set position just enter x y z as float numbers", nargs="+", type=float)
+parser.add_argument("position", help="Moves robot arm to set position just enter x y z as float numbers", nargs="+", type=float, default="100 100 100")
+parser.add_argument("orientation", help="orents robot arm just enter quaternion as float numbers", nargs="+", type=float, default="0 0 0 0")
 args = parser.parse_args()
 # -------------------------------------------------
 # --------- Modify as required ------------
@@ -75,9 +76,17 @@ def control_thread(rate):
     """
     while not rospy.is_shutdown():
         error = 100.
+        if args.position[0] == 100 and args.position[1] == 100 and args.position[2] == 100:
+            goal_pos = CARTESIAN_POSE['position']
+        else:
+            print("walah")
+            goal_pos = np.array(args.position)
+        if args.orientation[0] == 0 and args.orientation[1] == 0 and args.orientation[2] == 0 and args.orientation[3] == 0:
+            goal_ori = CARTESIAN_POSE['orientation'] #np.quaternion(q.w, q.x,q.y,q.z)
+        else:
+            print("walah22121")
+            goal_pos = np.array(args.orientation)
         
-        goal_pos = np.array(args.position)
-        goal_ori = CARTESIAN_POSE['orientation'] #np.quaternion(q.w, q.x,q.y,q.z)
         while error > 0.005:
             curr_pose = copy.deepcopy(CARTESIAN_POSE)
             curr_pos, curr_ori = curr_pose['position'],curr_pose['orientation']
