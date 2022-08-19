@@ -12,10 +12,13 @@ def plane_removal(xyz, rgb, tol):
     
     # plane removal
     mean=np.mean(xyz, axis=0)
+    #print(mean)
+    #print(min(xyz[:,2]))
+    min_z = min(xyz[:,2])
     # st = time.time()
     for(xyz_, rgb_) in zip(xyz, rgb):
         #if abs(background - rgb_dist(rgb_)) < 2:
-        if abs(xyz_[2] - mean[2]) > tol:
+        if abs(xyz_[2] - min_z) > tol:
             xyz_planeless.append(xyz_)
             rgb_planeless.append(rgb_)
     # et = time.time()

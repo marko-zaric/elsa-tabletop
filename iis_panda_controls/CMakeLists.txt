@@ -25,7 +25,12 @@ generate_messages(
   std_msgs
 )
 
-catkin_install_python(PROGRAMS scripts/model_states_read.py scripts/joint_command_publisher.py scripts/read_cartesian_pose.py scripts/read_camera.py scripts/move_to_neutral.py scripts/benchmark_perception.py scripts/spawn_specific_scene.py
+catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py 
+                      scripts/node_gazebo_move_to_neutral.py 
+                      scripts/node_gazebo_read_camera.py 
+                      scripts/node_gazebo_read_cartesian_pose.py 
+                      scripts/node_gazebo_joint_command_publisher.py 
+                      scripts/node_gazebo_read_camera.py 
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 

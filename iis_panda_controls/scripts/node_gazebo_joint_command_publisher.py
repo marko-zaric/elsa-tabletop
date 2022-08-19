@@ -9,8 +9,8 @@ from franka_core_msgs.msg import EndPointState, JointCommand, RobotState
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("position", help="Moves robot arm to set position just enter x y z as float numbers", nargs="+", type=float, default="100 100 100")
-parser.add_argument("orientation", help="orents robot arm just enter quaternion as float numbers", nargs="+", type=float, default="0 0 0 0")
+parser.add_argument("-p", "--position", required=False, help="Moves robot arm to set position just enter x y z as float numbers", type=float, nargs="+", default=[0.306, 0.0, 0.585])
+parser.add_argument("-o", "--orientation", required=False, help="orients robot arm just enter quaternion as float numbers", type=float, nargs="+", default=[0.0, -1.0, 0.0, 0.0])
 args = parser.parse_args()
 # -------------------------------------------------
 # --------- Modify as required ------------
@@ -58,6 +58,7 @@ def quatdiff_in_euler(quat_curr, quat_des):
         Compute difference between quaternions and return 
         Euler angles as difference
     """
+    quat_des = np.quaternion(quat_des[0], quat_des[1],quat_des[2],quat_des[3])
     curr_mat = quaternion.as_rotation_matrix(quat_curr)
     des_mat = quaternion.as_rotation_matrix(quat_des)
     rel_mat = des_mat.T.dot(curr_mat)
@@ -76,16 +77,14 @@ def control_thread(rate):
     """
     while not rospy.is_shutdown():
         error = 100.
-        if args.position[0] == 100 and args.position[1] == 100 and args.position[2] == 100:
-            goal_pos = CARTESIAN_POSE['position']
-        else:
-            print("walah")
-            goal_pos = np.array(args.position)
-        if args.orientation[0] == 0 and args.orientation[1] == 0 and args.orientation[2] == 0 and args.orientation[3] == 0:
-            goal_ori = CARTESIAN_POSE['orientation'] #np.quaternion(q.w, q.x,q.y,q.z)
-        else:
-            print("walah22121")
-            goal_pos = np.array(args.orientation)
+        # if args.position[0] == 100 and args.position[1] == 100 and args.position[2] == 100:
+        #     goal_pos = CARTESIAN_POSE['position']
+        # else:
+        goal_pos = np.array(args.position)
+        # if args.orientation[0] == 0 and args.orientation[1] == 0 and args.orientation[2] == 0 and args.orientation[3] == 0:
+        #     goal_ori = CARTESIAN_POSE['orientation'] #np.quaternion(q.w, q.x,q.y,q.z)
+        # else:
+        goal_ori = np.array(args.orientation)
         
         while error > 0.005:
             curr_pose = copy.deepcopy(CARTESIAN_POSE)
@@ -93,7 +92,6 @@ def control_thread(rate):
 
             curr_vel = (CARTESIAN_VEL['linear']).reshape([3,1])
             curr_omg = CARTESIAN_VEL['angular'].reshape([3,1])
-
             delta_pos = (goal_pos - curr_pos).reshape([3,1])
             delta_ori = quatdiff_in_euler(curr_ori, goal_ori).reshape([3,1])
 

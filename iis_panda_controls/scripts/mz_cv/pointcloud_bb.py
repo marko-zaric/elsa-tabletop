@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import DBSCAN
-
+from pointcloud_objects import PointCloudObject, PointCloudScene
 import time
-from mz_cv.bounding_box import *
-from mz_cv.plane_removal import *
+from bounding_box import *
+from plane_removal import *
 
 
 def pointcloudBB(xyz, rgb=None, ax = None):
@@ -40,7 +40,6 @@ def pointcloudBB(xyz, rgb=None, ax = None):
     
     object_bounding_boxes = []
     # --- Bounding Boxes ---
-    labels = ["can1", "can2", "panda", "cube7.5cm", "brick2", "brick1", "cube5cm", "unidentified"]
     for obj_num in range(len(objects)):
         #print(labels[obj_num])
         pose_cam, pose_fixed, dimensions = convex_hull_bounding_box(objects[obj_num])
@@ -71,7 +70,11 @@ if __name__ == '__main__':
     # fig = plt.figure(figsize=(12,12))
     # ax = fig.add_subplot(111)
     
-    pointcloudBB(xyz, ax=ax)
+    PC = PointCloudScene(debug=True)
+    PC.create_bounding_boxes(xyz)
+    PC.plot_scene(ax)
+
+    #pointcloudBB(xyz, ax=ax)
 
 
 

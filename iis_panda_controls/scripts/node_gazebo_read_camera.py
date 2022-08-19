@@ -2,7 +2,8 @@ from h11 import Data
 import rospy
 import sys
 sys.path.append("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts")
-from pointcloud_bb import pointcloudBB
+#from mz_cv.pointcloud_bb import pointcloudBB
+from mz_cv.pointcloud_objects import PointCloudObject, PointCloudScene
 from sensor_msgs.point_cloud2 import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import ctypes
@@ -51,7 +52,7 @@ def callback(data):
 
 def listener():
     rospy.init_node("read_cam_data", anonymous=True)
-    rospy.Subscriber("/downsample/output", PointCloud2, callback=callback) # /camera/depth/color/points
+    rospy.Subscriber("/downsample/output", PointCloud2, callback=callback) # /downsample/output
     pub = rospy.Publisher('/bounding_boxes', BB_Scene, queue_size=1)
     # s = rospy.Service('observe', Observe, handle_observe)
     while not rospy.is_shutdown():
@@ -79,10 +80,14 @@ def listener():
 
             count_points += 1
 
-        np.save("/home/marko/Desktop/IIS_Research/xyz.npy", xyz)
-        np.save("/home/marko/Desktop/IIS_Research/rgb.npy", rgb)
+        # np.save("/home/marko/Desktop/IIS_Research/xyz_low_sample.npy", xyz)
+        # np.save("/home/marko/Desktop/IIS_Research/rgb_low_sample.npy", rgb)
+        
 
-        SCENE = ArrayToBBScene(pointcloudBB(xyz))
+
+        PC = PointCloudScene()
+
+        SCENE = ArrayToBBScene(PC.create_bounding_boxes(xyz))
         
         pub.publish(SCENE)
     

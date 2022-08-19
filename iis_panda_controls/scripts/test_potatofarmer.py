@@ -5,6 +5,29 @@ import random
 from itertools import product
 
 
+vec = np.array([1,-1, 1])
+
+vec = vec / np.linalg.norm(vec)
+
+
+zenith = np.arctan2(vec[2], vec[0])
+azimuth = None
+if vec[0] >= 0 and vec[1] >= 0:
+    azimuth = np.arctan2(vec[1], vec[0])
+elif vec[0] < 0 and vec[1] >= 0:
+    azimuth = np.arctan2(vec[1], vec[0])
+elif vec[0] <= 0 and vec[1] < 0:
+    azimuth = np.arctan2(-vec[1], -vec[0]) + np.pi
+elif vec[0] >= 0 and vec[1] < 0:
+    azimuth = np.arctan2(-vec[1], vec[0]) + (3*np.pi)/2
+
+print(azimuth*360/(2*np.pi))
+
+
+
+
+
+
 exit()
 
 r = R.from_euler('xyz', [0, 0, np.pi/2])
