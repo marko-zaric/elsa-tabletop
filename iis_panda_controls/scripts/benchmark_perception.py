@@ -161,7 +161,7 @@ def new_scene():
     new_poses = dict()
     xy_grid = copy.copy(XY_GRID)
     in_frame = np.random.randint(low=0, high=2, size=7)
-    euler_z_angle = np.random.random(size=7) * np.pi
+    euler_z_angle = np.random.random(size=7) * np.pi - (np.pi / 2)
     #print("winkel: ", euler_z_angle)
     move_out_of_frame()
     for i, name in enumerate(OBJECT_LIST):
@@ -215,16 +215,21 @@ def evaluate(new_poses, bb_camera, comp_time, scene):
             if diff < min_diff:
                 min_diff = diff
                 min_index = i
-
+        round = False
         if pose.startswith("can"):
             angle = 0.0
+            round = True
         else:
             angle = new_poses[pose][1]
+
+        round_percept = False
+        if bb_camera[min_index].phi == 0.0:
+           round_percept = True 
 
         CSV_WRITER.writerow([scene, pose, new_poses[pose][0].position.x, new_poses[pose][0].position.y, new_poses[pose][0].position.z,
                             angle, OBJ_DIMENSIONS[pose][0], OBJ_DIMENSIONS[pose][1], 
                             OBJ_DIMENSIONS[pose][2], bb_camera[min_index].x, bb_camera[min_index].y, bb_camera[min_index].z,
-                            bb_camera[min_index].phi, bb_camera[min_index].dx, bb_camera[min_index].dy, bb_camera[min_index].dz])   
+                            bb_camera[min_index].phi, bb_camera[min_index].dx, bb_camera[min_index].dy, bb_camera[min_index].dz, round, round_percept])   
 
         
         

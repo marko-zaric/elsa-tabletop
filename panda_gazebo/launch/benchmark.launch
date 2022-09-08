@@ -109,5 +109,5 @@
     </rosparam>
   </node>
 
-  <node pkg="iis_panda_controls" type="read_camera.py" name="read_cam_data" />
+  <node pkg="iis_panda_controls" type="node_gazebo_read_camera.py" name="read_cam_data" />
 </launch>

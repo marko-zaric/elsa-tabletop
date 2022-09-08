@@ -62,26 +62,26 @@ def listener():
         xyz = np.zeros((DATA_CALLBACK.width, 3))
         rgb = np.zeros((DATA_CALLBACK.width, 3))
         for point in gen:
-            rgb_float = point[3]
+            # rgb_float = point[3]
             # # cast float32 to int so that bitwise operations are possible
-            s = struct.pack('>f' ,rgb_float)
-            i = struct.unpack('>l',s)[0]
+            # s = struct.pack('>f' ,rgb_float)
+            # i = struct.unpack('>l',s)[0]
 
 
-            # # you can get back the float value by the inverse operations
-            pack = ctypes.c_uint32(i).value
+            # # # you can get back the float value by the inverse operations
+            # pack = ctypes.c_uint32(i).value
     
-            r = (pack & 0x00FF0000)>> 16
-            g = (pack & 0x0000FF00)>> 8
-            b = (pack & 0x000000FF)
+            # r = (pack & 0x00FF0000)>> 16
+            # g = (pack & 0x0000FF00)>> 8
+            # b = (pack & 0x000000FF)
 
             xyz[count_points, :3] = [point[0], point[1], point[2]]
-            rgb[count_points, :3] = [r, g, b]
+            # rgb[count_points, :3] = [r, g, b]
 
             count_points += 1
 
-        # np.save("/home/marko/Desktop/IIS_Research/xyz_low_sample.npy", xyz)
-        # np.save("/home/marko/Desktop/IIS_Research/rgb_low_sample.npy", rgb)
+        # np.save("/home/marko/Desktop/IIS_Research/xyz_592.npy", xyz)
+        # np.save("/home/marko/Desktop/IIS_Research/rgb_592.npy", rgb)
         
 
 

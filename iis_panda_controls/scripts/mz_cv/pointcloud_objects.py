@@ -43,7 +43,7 @@ class PointCloudScene:
         print(self.xyz.shape)
         print(np.max(self.xyz[:,2]))
         print(np.min(self.xyz[:,2]))
-        dbscan = DBSCAN(eps=0.02, min_samples=6)
+        dbscan = DBSCAN(eps=0.022, min_samples=6)
         dbscan.fit(self.xyz)
         self.dbscan_labels = dbscan.labels_
 
@@ -160,7 +160,22 @@ class PointCloudObject:
         else:
             # get theta 
             points2D = points[:,0:2] 
-            hull = ConvexHull(points2D)
+            try:
+                hull = ConvexHull(points2D)
+            except:
+                self.center_x = 1000
+                self.center_y = 1000
+                self.center_z = 1000
+
+                # store orientation
+                self.theta_camera = 1000
+                self.theta = 1000
+
+                # dimensions
+                self.size_x = x_diff
+                self.size_y = y_diff
+                self.size_z = z_diff
+                return 
             verts = hull.vertices
             max_dist = 0
             max_edge = None
