@@ -6,6 +6,9 @@ from iis_panda_controls.msg import BoundingBox
 from perception.pointcloud_objects import PointCloudScene
 
 
+
+
+
 def test():
     rospy.init_node("test_point_cloud", anonymous=True)
 
@@ -16,14 +19,12 @@ def test():
     PC = PointCloudScene(debug=True)
 
     PC.detect_objects(xyz)
-    PC.create_bounding_boxes()
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-
+    
     for i in range(len(PC.objects_in_scene)):
-        PC.objects_in_scene[i].plot_point_cloud(ax=ax, marker_size=1)
-        PC.objects_in_scene[i].plot_bounding_box(ax=ax)
+        PC.objects_in_scene[i].plot_point_cloud(ax)
     plt.show()
 
 if __name__ == '__main__':

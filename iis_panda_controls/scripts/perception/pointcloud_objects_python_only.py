@@ -39,10 +39,10 @@ class PointCloudScene:
         # --- Segmentation ---  
         #xyz, rgb = plane_removal(xyz, rgb, 10**-2)
         #benchmark.append(time.time())
-        print(type(self.xyz.dtype))
-        print(self.xyz.shape)
-        print(np.max(self.xyz[:,2]))
-        print(np.min(self.xyz[:,2]))
+        # print(type(self.xyz.dtype))
+        # print(self.xyz.shape)
+        # print(np.max(self.xyz[:,2]))
+        # print(np.min(self.xyz[:,2]))
         dbscan = DBSCAN(eps=0.022, min_samples=6)
         dbscan.fit(self.xyz)
         self.dbscan_labels = dbscan.labels_

@@ -44,8 +44,10 @@ def is_outlier(points, thresh=3.5):
     return modified_z_score > thresh
 
 
-xyz = np.load("xyz_low_sample.npy")
-rgb = np.load("rgb_low_sample.npy")
+xyz = np.load("/home/marko/Desktop/IIS_Research/xyz_can.npy")
+rgb = np.load("/home/marko/Desktop/IIS_Research/rgb_can.npy")
+# xyz = np.load("xyz_low_sample.npy")
+# rgb = np.load("rgb_low_sample.npy")
 
 xyz[:,2] = 1.001 - xyz[:,2] # 0.851
 xyz[:,0] = xyz[:,0]
@@ -88,7 +90,8 @@ for i, xyz_,rgb_ in zip(dbscan.labels_, xyz, rgb):
 # add_image_bounding_pixels(ax, min_point, max_point)
 # plt.show()
 # exit()
-object = np.array(objects[5])
+
+object = np.array(objects[0])
 
 # rgb_plot = np.array(colors[0]) / 255
 # #object = xyz
