@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
     genmsg
 )
 
+find_package (OpenCV 4.0.0 REQUIRED)
+
 catkin_python_setup()
 
 ################################################
@@ -61,6 +63,7 @@ catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py
                       scripts/node_gazebo_read_camera.py 
                       scripts/test_point_cloud.py
                       scripts/test_bounding_boxes.py
+                      scripts/test_surface_normals.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ###########
@@ -72,6 +75,7 @@ catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 
@@ -86,4 +90,7 @@ target_link_libraries(subscribe_point_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES}
 
 add_executable(save_point_cloud src/save_point_cloud.cpp)
 target_link_libraries(save_point_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(surface_feature_service src/surface_features_service.cpp)
+target_link_libraries(surface_feature_service ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
 

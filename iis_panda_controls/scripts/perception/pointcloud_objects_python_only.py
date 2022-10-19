@@ -246,10 +246,6 @@ class PointCloudObject:
         self.size_y = y_diff
         self.size_z = z_diff
 
-    def min_prob(mu, M, k_n):
-        print(k.shape)
-
-        #return np.matmul(M, mu) - k
 
     def compute_surface_normals(self):
         undirected_normals = []

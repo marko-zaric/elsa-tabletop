@@ -1,14 +1,14 @@
-from distutils.log import debug
-from operator import index
 import numpy as np
 from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
-from sklearn.neighbors import NearestNeighbors
 import time
 from sklearn.cluster import DBSCAN
 from iis_panda_controls.srv import SurfaceFeatures
 import rospy
-from sensor_msgs.point_cloud2 import PointCloud2
+import sensor_msgs.msg as sensor_msgs
+import std_msgs.msg as std_msgs
+from matplotlib import colors
+
 
 '''
 This class describes an object according to the paper Learning Social Affordances and Using Them for Planning 
@@ -52,6 +52,7 @@ class PointCloudScene:
 
         benchmark.append(time.time())
         objects = []
+        objects_rgb = None
         for i in range(len(labels_set)):
             objects.append([])
 
@@ -59,16 +60,28 @@ class PointCloudScene:
             objects[i].append(xyz_)
         benchmark.append(time.time())
 
+        if rgb is not None:
+            objects_rgb = []
+            for i in range(len(labels_set)):
+                objects_rgb.append([])
+
+            for i, rgb_ in zip(dbscan.labels_, rgb):
+                objects_rgb[i].append(rgb_)
+
+
         for i in range(len(benchmark)-1):
             print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
-        for object in objects:
+        for i, object in enumerate(objects):
             # Checks if panda foot is still in the scene or not
             if np.linalg.norm(np.array(object).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
-                self.objects_in_scene.append(PointCloudObject(object))
+                if rgb is None:
+                    self.objects_in_scene.append(PointCloudObject(object))
+                else:
+                    self.objects_in_scene.append(PointCloudObject(object, objects_rgb[i]))
 
     def create_bounding_boxes(self):
-        print("Computing Bounding boxes...")
+        print("Computing Bounding boxes ...")
         benchmark = []
 
         object_bounding_boxes = []
@@ -85,13 +98,11 @@ class PointCloudScene:
         
         return object_bounding_boxes
     
-    def calculate_surface_features():
-        pass
-        # # --- Surface Features ---
-        # for object in objects:
-        #     rospy.wait_for_service("calculate_surface_features")
-        #     calculate_surface_features = rospy.ServiceProxy("calculate_surface_features", SurfaceFeatures)
-        #     response = calculate_surface_features(object)
+    def calculate_surface_features(self):
+        print("Computing Surface features ...")
+        # --- Surface Features ---
+        for i in range(len(self.objects_in_scene)):
+            self.objects_in_scene[i].compute_surface_normals()
 
     def plot_scene(self, ax=None):
         for obj in self.objects_in_scene:
@@ -111,8 +122,9 @@ class PointCloudObject:
                    [0, 0, 1, 0],
                    [0, 0, 0, 1]])
 
-    def __init__(self, object):
+    def __init__(self, object, rgb = None):
         self.xyz_points = np.array(object)
+        self.rgb = rgb
 
         # Object Pose Camera
         self.center_x_camera = 0
@@ -264,105 +276,49 @@ class PointCloudObject:
         self.size_y = y_diff
         self.size_z = z_diff
 
-    def min_prob(mu, M, k_n):
-        print(k.shape)
-
-        #return np.matmul(M, mu) - k
-
     def compute_surface_normals(self):
-        undirected_normals = []
-        nbrs = NearestNeighbors(n_neighbors=6, algorithm='ball_tree').fit(self.xyz_points)
-        distances, indices = nbrs.kneighbors(self.xyz_points)
-        for index_group in indices:
-            COV = np.cov(np.array(self.xyz_points)[index_group].T)
-            w, v = np.linalg.eig(COV)
-
-            min_ev_index = np.argmin(w)
-            undirected_normals.append([*list(self.xyz_points[index_group[0]]),*list(v[min_ev_index]/10000)])
-
-        for un in undirected_normals:
-            pointcloudpoint_to_center = np.linalg.norm(np.array(un[:3]) - np.array(self.pose_camera()[:3]))
-            vector_tip_to_center = np.linalg.norm((np.array(un[:3]) + np.array(un[3:])) - np.array(self.pose_camera()[:3]))
-            if vector_tip_to_center < pointcloudpoint_to_center:
-                self.surface_normals_vector.append([*un[:3],*list((-10000) * np.array(un[3:]))])
-            else:
-                self.surface_normals_vector.append([*un[:3],*list(10000 * np.array(un[3:]))])
-
-        for vec in self.surface_normals_vector:
-            zenith = np.arctan2(vec[2], vec[0])
-            azimuth = None
-            if vec[0] >= 0 and vec[1] >= 0:
-                azimuth = np.arctan2(vec[1], vec[0])
-            elif vec[0] < 0 and vec[1] >= 0:
-                azimuth = np.arctan2(vec[1], vec[0])
-            elif vec[0] <= 0 and vec[1] < 0:
-                azimuth = np.arctan2(-vec[1], -vec[0]) + np.pi
-            elif vec[0] >= 0 and vec[1] < 0:
-                azimuth = np.arctan2(-vec[1], vec[0]) + (3*np.pi)/2
-            self.surface_normals_angles.append(np.array([azimuth, zenith]))
-
-
+        # convert numpy array into sensor_msgs/PointCloud2 
+        ros_dtype = sensor_msgs.PointField.FLOAT32
+        dtype = np.float32
+        itemsize = np.dtype(dtype).itemsize
+        rgb_values = None
+        if self.rgb is None:
+            rgb_values = np.ones_like(self.xyz_points) * 0.6
+        else:
+            rgb_values = self.rgb
         
-        for i, p in enumerate(self.xyz_points):
-            # estimate normal curvatures k_n
-            k_n = []
-            theta_n = []
-            M_n = []
-            first_index = True
-            for index_nbr in indices[i]:
-                if first_index == True:
-                    first_index = False
-                    continue
-                q_index = index_nbr #indices[i][1]
-                q = self.xyz_points[q_index] - p
-                M_i = self.surface_normals_vector[q_index][3:]
-            
-                n_xy = (q[0]*M_i[0] + q[1]*M_i[1]) / np.sqrt(q[0]**2 + q[1]**2)
+        hex_rgb = []
+        for rgb_ in rgb_values:
+            hex_rgb.append(np.float32(int(colors.rgb2hex(rgb_).replace('#', '0x'), 0)))
+        hex_rgb = np.atleast_2d(np.array(hex_rgb)).T
+        points = np.hstack((self.xyz_points, hex_rgb))
 
-                k_n.append(n_xy / (np.sqrt(n_xy**2 + M_i[2]**2)*np.sqrt(q[0]**2 + q[1]**2)))
+        data = points.astype(dtype).tobytes()
 
-                #Least Square Fitting for principle curvatures
-                N = self.surface_normals_vector[i][3:]
-                psi = np.arccos(N[2])
-                phi = np.arctan2(N[1], N[0])
-                X = np.array([-np.sin(phi), np.cos(phi), 0])
-                Y = np.array([np.cos(psi)*np.cos(phi), np.cos(psi)*np.sin(phi), -np.sin(psi)])
-                # print(N)
-                # print(X)
-                # print(Y)
+        fields = [sensor_msgs.PointField(
+        name=n, offset=i*itemsize, datatype=ros_dtype, count=1)
+        for i, n in enumerate(['x', 'y', 'z', 'rgb'])]
 
-                # project pq onto Plane X-Y
-                proj_pq_on_N = np.dot(p*q, N)*np.array(N)
-                proj_pq_on_XY = p*q - proj_pq_on_N
-                theta = np.arccos(np.dot(X, proj_pq_on_XY/np.linalg.norm(proj_pq_on_XY))) 
-                theta_n.append(theta)
-                M_n.append(np.array([np.cos(theta)**2, 2*np.sin(theta)*np.cos(theta), np.sin(theta)**2]))
+        header = std_msgs.Header(frame_id="/map", stamp=rospy.Time.now())
 
-            M = np.array(M_n, dtype=np.float)
-            k_n = np.array(k_n, dtype=np.float)
-            A, B, C = np.linalg.lstsq(M, k_n, rcond=-1)[0]
-            weingarten_matrix = np.matrix([[A, B], [B, C]])
-            
-            principal_cuvatures = np.linalg.eigvalsh(weingarten_matrix)
-            self.priciple_curvatures.append(principal_cuvatures)
-        
+        srv_input = sensor_msgs.PointCloud2(header=header,
+                                height=1,
+                                width=points.shape[0],
+                                is_dense=False,
+                                is_bigendian=False,
+                                fields=fields,
+                                point_step=(itemsize * 4),
+                                row_step=(itemsize * 4 * points.shape[0]),
+                                data=data
+    )
 
-            
-            # soa = np.array([[0,0,0,*X], [0,0,0,*Y],[0,0,0,*(proj_pq_on_XY/np.linalg.norm(proj_pq_on_XY))],[0,0,0,*((p*q)/np.linalg.norm(p*q))]])
-            # soa.T[3:] = soa.T[3:]/100
-
-            # soas = [[0,0,0,*X], [0,0,0,*Y],[0,0,0,*(proj_pq_on_XY/np.linalg.norm(proj_pq_on_XY))],[0,0,0,*((p*q)/np.linalg.norm(p*q))]]
-            # labels = ["X", "Y", "proj_XY", "pq"]
-            # colors = ["red", "green", "blue", "yellow"]
-            # fig = plt.figure()
-            # ax = fig.add_subplot(111, projection='3d')
-            # for i,soa in enumerate(soas):
-            #     X, Y, Z, U, V, W = soa #zip(*soa)
-            #     ax.quiver(X, Y, Z, U, V, W, label=labels[i], color=colors[i])
-            # plt.legend()
-            # plt.show()
-            # if i > 3:
-            #     exit()
+        rospy.wait_for_service("calculate_surface_features")
+        try:
+            srv_calc_surface_features = rospy.ServiceProxy("calculate_surface_features", SurfaceFeatures)
+            response = srv_calc_surface_features(srv_input)
+            print(response)
+        except rospy.ServiceException as e:
+            print("Service failed %s", e)
 
             
             

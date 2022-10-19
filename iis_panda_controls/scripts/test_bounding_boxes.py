@@ -1,7 +1,6 @@
 import rospy
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 from iis_panda_controls.msg import BoundingBox
 from perception.pointcloud_objects import PointCloudScene
 

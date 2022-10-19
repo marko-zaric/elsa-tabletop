@@ -1,14 +1,38 @@
+import rospy
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.cluster import DBSCAN
-import sys
-sys.path.append("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts/")
-from mz_cv.bounding_box import *
-from mz_cv.plane_removal import *
-from mz_cv.pointcloud_objects import PointCloudObject
-from sklearn.cluster import DBSCAN
-#from elsa_perception.pointcloud_objects import PointCloudObject
+from perception.pointcloud_objects import PointCloudScene
 import time
+
+
+
+
+def test():
+    rospy.init_node("test_point_cloud", anonymous=True)
+
+    # xyz = np.load("/home/marko/Desktop/IIS_Research/xyz_can.npy")
+    xyz = np.load("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts/xyz.npy")
+    # rgb = np.load("/home/marko/Desktop/IIS_Research/rgb_can.npy")
+
+    PC = PointCloudScene(debug=True)
+
+    PC.detect_objects(xyz)
+    PC.calculate_surface_features()
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # for i in range(len(PC.objects_in_scene)):
+    #     PC.objects_in_scene[i].plot_point_cloud(ax=ax, marker_size=1)
+    #     PC.objects_in_scene[i].plot_bounding_box(ax=ax)
+    # plt.show()
+
+if __name__ == '__main__':
+    test()
+
+
+
+exit()
 
 def is_outlier(points, thresh=3.5):
     """
@@ -42,92 +66,6 @@ def is_outlier(points, thresh=3.5):
     modified_z_score = 0.6745 * diff / med_abs_deviation
 
     return modified_z_score > thresh
-
-
-xyz = np.load("/home/marko/Desktop/IIS_Research/xyz_can.npy")
-rgb = np.load("/home/marko/Desktop/IIS_Research/rgb_can.npy")
-# xyz = np.load("xyz_low_sample.npy")
-# rgb = np.load("rgb_low_sample.npy")
-
-xyz[:,2] = 1.001 - xyz[:,2] # 0.851
-xyz[:,0] = xyz[:,0]
-xyz[:,1] = - xyz[:,1]
-
-# get frame
-min_point, max_point = get_image_corners(xyz)
-
-
-# xyz_c = []
-# rgb_c = []
-# for _xyz, _rgb in zip(xyz, rgb):
-#     if _xyz[2] > 0.1 or _xyz[2] < 0.0:
-#         continue
-#     else:
-#         xyz_c.append(_xyz)
-#         rgb_c.append(_rgb)
-# xyz = np.array(xyz_c)
-# rgb = np.array(rgb_c)
-
-# xyz, rgb = plane_removal(xyz, rgb, 5*10**-2)
-
-
-dbscan = DBSCAN(eps=0.03, min_samples=6)
-dbscan.fit(xyz)
-labels_set = set(dbscan.labels_)
-objects = []
-colors = []
-for i in range(len(labels_set)):
-    objects.append([])
-    colors.append([])
-for i, xyz_,rgb_ in zip(dbscan.labels_, xyz, rgb):
-    objects[i].append(xyz_)
-    colors[i].append(rgb_)
-
-# ax = plt.axes(projection='3d')
-# ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2],c = dbscan.labels_ , s=1) 
-
-# # Corner Pixel to see full camera image
-# add_image_bounding_pixels(ax, min_point, max_point)
-# plt.show()
-# exit()
-
-object = np.array(objects[0])
-
-# rgb_plot = np.array(colors[0]) / 255
-# #object = xyz
-# ax.set_box_aspect((np.ptp(object[:,0]),np.ptp(object[:,1]), np.ptp(object[:,2])))
-# ax.scatter(object[:,0], object[:,1], object[:,2],c = rgb_plot , s=1) 
-# add_image_bounding_pixels(ax, min_point, max_point)
-# plt.show()
-# exit()
-benchmark = []
-benchmark.append(time.time())
-cola = PointCloudObject(object)
-benchmark.append(time.time())
-cola.compute_bounding_box()
-benchmark.append(time.time())
-cola.compute_surface_normals()
-benchmark.append(time.time())
-cola.plot_surface_normals()
-plt.show()
-
-# SCENE = []
-# for obj in objects:
-#     SCENE.append(PointCloudObject(obj))
-
-# benchmark.append(time.time())
-# for obj in SCENE:
-#     obj.compute_bounding_box()
-# benchmark.append(time.time())
-# for obj in SCENE:
-#     obj.compute_surface_normals()
-# benchmark.append(time.time())
-
-
-
-# for i in range(len(benchmark)-1):
-#     print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
-
 
 pc = np.array(cola.priciple_curvatures).T[0]
 pc2 = np.array(cola.priciple_curvatures).T[1]
