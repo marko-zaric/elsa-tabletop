@@ -56,11 +56,19 @@ catkin_package(
 )
 
 catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py 
-                      scripts/node_gazebo_move_to_neutral.py 
+                      # PERCEPTION
                       scripts/node_gazebo_read_camera.py 
-                      scripts/node_gazebo_read_cartesian_pose.py 
+                      # CONFIGURATION SPACE CONTROL
                       scripts/node_gazebo_joint_command_publisher.py 
-                      scripts/node_gazebo_read_camera.py 
+                      scripts/node_gazebo_read_cartesian_pose.py 
+                      # JOINT SPACE CONTROL 
+                      scripts/node_gazebo_move_to_neutral.py 
+                      scripts/node_gazebo_move_to_zero_config.py 
+                      scripts/node_gazebo_test_joint_movement.py
+                      scripts/node_gazebo_single_joint_control.py
+                      # GESTURES
+                      scripts/node_gazebo_pass_gesture.py
+                      # TESTS
                       scripts/test_point_cloud.py
                       scripts/test_bounding_boxes.py
                       scripts/test_surface_normals.py

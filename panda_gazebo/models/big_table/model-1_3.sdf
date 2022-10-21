@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
-<sdf version="1.4">
-  <model name="table">
+<sdf version="1.3">
+  <model name="big_table">
     <static>true</static>
     <link name="link">
       <collision name="surface">
