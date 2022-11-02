@@ -99,13 +99,16 @@
   <group if="$(eval arg('force_neutral_pose') == true)">
       <node pkg="panda_gazebo" type="force_neutral_pose.py" name="startup_script"/>
   </group> 
-  
+
+  <node pkg="iis_panda_controls" type="surface_feature_service" name="surface_feature_service"/>
+  <node pkg="iis_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/>
+
   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
 
   <node pkg="nodelet" type="nodelet" name="downsample" args="load pcl/VoxelGrid pcl_manager" output="screen">
     <remap from="~input" to="/camera/depth/color/points" />
     <rosparam>
-      leaf_size: 0.01
+      leaf_size: 0.005
     </rosparam>
   </node>
 

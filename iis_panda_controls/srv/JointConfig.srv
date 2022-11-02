@@ -1,0 +1,4 @@
+StrArray joints
+float32[] values
+---
+bool finished

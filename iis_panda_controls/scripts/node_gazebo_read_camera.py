@@ -1,7 +1,7 @@
 from h11 import Data
 import rospy
 import sys
-from mz_cv.pointcloud_objects import PointCloudScene
+from perception.pointcloud_objects import PointCloudScene
 from sensor_msgs.point_cloud2 import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import ctypes
@@ -15,7 +15,7 @@ arrayBBS = None
 SCENE = None
 DATA_CALLBACK = None
 ENABLE_COLOR = False
-SAVE_POINT_CLOUD = False
+SAVE_POINT_CLOUD = True
 
 def ArrayToBBScene(bounding_boxes):
     scene = []
@@ -73,16 +73,18 @@ def listener():
             count_points += 1
 
         if SAVE_POINT_CLOUD:
-            np.save("/home/marko/Desktop/IIS_Research/xyz_can.npy", xyz)
+            np.save("/home/marko/Desktop/IIS_Research/xyz.npy", xyz)
             if ENABLE_COLOR:
-                np.save("/home/marko/Desktop/IIS_Research/rgb_can.npy", rgb)
+                np.save("/home/marko/Desktop/IIS_Research/rgb.npy", rgb)
 
 
         PC = PointCloudScene()
 
-        SCENE = ArrayToBBScene(PC.create_bounding_boxes(xyz))
-        
-        pub.publish(SCENE)
+        PC.detect_objects(xyz)
+        PC.create_bounding_boxes()
+        PC.calculate_surface_features()
+        # SCENE = ArrayToBBScene(PC.create_bounding_boxes(xyz))
+        # pub.publish(SCENE)
     
 
 if __name__ == '__main__':

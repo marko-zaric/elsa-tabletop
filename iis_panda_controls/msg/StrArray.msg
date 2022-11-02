@@ -1,0 +1,1 @@
+string[] list_of_strings

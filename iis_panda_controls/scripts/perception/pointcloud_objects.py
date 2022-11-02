@@ -32,6 +32,7 @@ class PointCloudScene:
         self.DEBUG = debug
     
     def detect_objects(self, xyz, rgb=None):
+        self.rgb = rgb
         #xyz, rgb = plane_removal(xyz, rgb, 10**-2)
         print("Detecting Objects...")
         benchmark = []
@@ -109,7 +110,11 @@ class PointCloudScene:
             if ax != None:
                 obj.plot_bounding_box(ax)
         if ax != None:
-            ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=0.01)
+            print(self.rgb)
+            if self.rgb is None:
+                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=0.01)
+            else:
+                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.rgb / 255, s=10)
             plt.legend()
             plt.show()  
 
@@ -311,7 +316,6 @@ class PointCloudObject:
                                 row_step=(itemsize * 4 * points.shape[0]),
                                 data=data
     )
-
         rospy.wait_for_service("calculate_surface_features")
         try:
             srv_calc_surface_features = rospy.ServiceProxy("calculate_surface_features", SurfaceFeatures)

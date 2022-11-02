@@ -5,16 +5,21 @@ from perception.pointcloud_objects import PointCloudScene
 import time
 
 
+def add_image_bounding_pixels(ax, min_point, max_point):
+    xyz = np.array([[min_point[0], min_point[1], max_point[2]]])
+    xyz = np.append(xyz, [[min_point[0], max_point[1], max_point[2]]], axis = 0)
+    xyz = np.append(xyz, [[max_point[0], min_point[1], max_point[2]]], axis = 0)
+    xyz = np.append(xyz, [[max_point[0], max_point[1], max_point[2]]], axis = 0)
 
+    ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2], s=0.0001)
 
 def test():
     rospy.init_node("test_point_cloud", anonymous=True)
 
-    # xyz = np.load("/home/marko/Desktop/IIS_Research/xyz_can.npy")
-    xyz = np.load("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts/xyz.npy")
-    # rgb = np.load("/home/marko/Desktop/IIS_Research/rgb_can.npy")
+    xyz = np.load("/home/marko/Desktop/IIS_Research/xyz.npy")
+    rgb = np.load("/home/marko/Desktop/IIS_Research/rgb.npy")
 
-    PC = PointCloudScene(debug=True)
+    PC = PointCloudScene(debug=False)
 
     PC.detect_objects(xyz)
     PC.calculate_surface_features()

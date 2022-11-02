@@ -3,9 +3,13 @@ from scipy.spatial.transform import Rotation as R
 import numpy as np
 import random
 from itertools import product
+
+ar = [1,2,3]
+print(np.atleast_2d(ar))
+exit()
 rad = 1.7628
 print(rad/(2*np.pi)*360)
-exit()
+
 vec = np.array([1,-1, 1])
 
 vec = vec / np.linalg.norm(vec)
