@@ -11,8 +11,7 @@ from iis_panda_controls.srv import JointConfig
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-p", "--position", required=False, help="Position of the center of object where to point at.", type=float, nargs="+", default=[0.8, 0.5, 0.06])
-parser.add_argument("-g", "--goal_is_object", required=False, help="Decides on Joints to point to object or space", type=int, default=1)
+parser.add_argument("-p", "--position", required=False, help="Position of the center of object where to point at.", type=float, nargs="+", default=[0.5, 0, 0.03])
 parser.add_argument("-o", "--orientation", required=False, help="orients robot arm just enter quaternion as float numbers", type=float, nargs="+", default=[0.0, -1.0, 0.0, 0.0])
 args = parser.parse_args()
 # -------------------------------------------------
@@ -34,16 +33,12 @@ JACOBIAN = None
 CARTESIAN_POSE = None
 CARTESIAN_VEL = None
 CURRENT_POSITION = None
-GOAL_IS_OBJECT = args.goal_is_object
 
-if GOAL_IS_OBJECT:
-    JOINTS = ['panda_joint2','panda_joint3','panda_joint4','panda_joint5']
-else:
-    JOINTS = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4','panda_joint5']
+JOINTS = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4','panda_joint5','panda_joint6']
     
 
 
-TARGET = None
+TARGET = args.position
 
 def _on_joint_state(msg):
     """
@@ -63,10 +58,7 @@ def _on_robot_state(msg):
     """
     global JACOBIAN, CARTESIAN_VEL, CURRENT_POSITION, JOINTS
     total_jacobian = np.asarray(msg.O_Jac_EE).reshape(6,7,order = 'F')
-    if GOAL_IS_OBJECT:
-        JACOBIAN = np.delete(total_jacobian, obj=(0, 5, 6), axis=1)
-    else:
-        JACOBIAN = np.delete(total_jacobian, obj=(5, 6), axis=1)
+    JACOBIAN = np.delete(total_jacobian, obj=(6), axis=1)
 
     CARTESIAN_VEL = {
                 'linear': np.asarray([msg.O_dP_EE[0], msg.O_dP_EE[1], msg.O_dP_EE[2]]),
@@ -113,15 +105,6 @@ joint_limits = {
 
 publish_rate = 100
 
-def calculate_goal_point(pos):
-    object_center = pos
-    joint1_angle = np.arctan2(object_center[0], object_center[1])
-    distance_robot_object_2D = np.sqrt(object_center[0]**2 + object_center[1]**2)
-    y_target = 0.8 * distance_robot_object_2D * np.sin(joint1_angle)
-    x_target = 0.8 * distance_robot_object_2D * np.cos(joint1_angle)
-    print("TARGET: ", [y_target, x_target, 0.2 ])
-    return (joint1_angle, [y_target , x_target , 0.2])
-
 def control_thread(rate, command_msg, joint_command_publisher):
     """
         Actual control loop. Uses goal pose from the feedback thread
@@ -165,9 +148,8 @@ def control_thread(rate, command_msg, joint_command_publisher):
 
 
 def perform_gesture():
-    global TARGET, JOINTS, GOAL_IS_OBJECT
-    # 
-    joint1_angle, TARGET  = calculate_goal_point(args.position)
+    global JOINTS
+
     rospy.init_node("point_gesture_node", anonymous=True)
     # global ctrl_thread
     cartesian_state_sub = rospy.Subscriber(
@@ -183,7 +165,7 @@ def perform_gesture():
         _on_robot_state,
         queue_size=1,
         tcp_nodelay=True)
-    
+
 
     joint_state_sub = rospy.Subscriber(
         'joint_states',
@@ -197,27 +179,7 @@ def perform_gesture():
 
     # wait for messages to be populated before proceeding
     rospy.loginfo("Waiting for joint configuration service...")
-
-    rospy.wait_for_service("send_joint_config")
-    rospy.loginfo("Joint configuration service found ...")
-
-    joints = StrArray()
-    joints.list_of_strings = ["panda_joint1", "panda_joint6"]
-    print(GOAL_IS_OBJECT)
-    if GOAL_IS_OBJECT:
-        values = [joint1_angle, 3.14]
-    else:
-        values = [0.0, 3.14]
-
-    print("First step")
-    try:
-        send_specific_joint_config = rospy.ServiceProxy("send_joint_config", JointConfig)
-        response = send_specific_joint_config(joints, values)
-        print(response)
-    except rospy.ServiceException as e:
-        print("Service failed %s", e)
-
-    print("second step")
+    
     # create joint command message and fix its type to joint torque mode
     command_msg = JointCommand()
     command_msg.names = JOINTS
