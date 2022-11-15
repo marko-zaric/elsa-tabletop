@@ -27,12 +27,13 @@ class PointCloudScene:
     def __init__(self, debug=False):
         self.objects_in_scene = []
         self.xyz = None
-        self.rgb = None
+        self.hsv = None
         self.dbscan_labels = None
         self.DEBUG = debug
+        self.bounding_boxes = []
     
-    def detect_objects(self, xyz, rgb=None):
-        self.rgb = rgb
+    def detect_objects(self, xyz, hsv=None):
+        self.hsv = hsv
         #xyz, rgb = plane_removal(xyz, rgb, 10**-2)
         print("Detecting Objects...")
         benchmark = []
@@ -53,7 +54,7 @@ class PointCloudScene:
 
         benchmark.append(time.time())
         objects = []
-        objects_rgb = None
+        objects_color = None
         for i in range(len(labels_set)):
             objects.append([])
 
@@ -61,13 +62,13 @@ class PointCloudScene:
             objects[i].append(xyz_)
         benchmark.append(time.time())
 
-        if rgb is not None:
-            objects_rgb = []
+        if hsv is not None:
+            objects_color = []
             for i in range(len(labels_set)):
-                objects_rgb.append([])
+                objects_color.append([])
 
-            for i, rgb_ in zip(dbscan.labels_, rgb):
-                objects_rgb[i].append(rgb_)
+            for i, rgb_ in zip(dbscan.labels_, hsv):
+                objects_color[i].append(rgb_)
 
 
         for i in range(len(benchmark)-1):
@@ -76,10 +77,10 @@ class PointCloudScene:
         for i, object in enumerate(objects):
             # Checks if panda foot is still in the scene or not
             if np.linalg.norm(np.array(object).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
-                if rgb is None:
+                if hsv is None:
                     self.objects_in_scene.append(PointCloudObject(object))
                 else:
-                    self.objects_in_scene.append(PointCloudObject(object, objects_rgb[i]))
+                    self.objects_in_scene.append(PointCloudObject(object, objects_color[i]))
 
     def create_bounding_boxes(self):
         print("Computing Bounding boxes ...")
@@ -96,13 +97,14 @@ class PointCloudScene:
         for i in range(len(benchmark)-1):
             print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
-        
+        self.bounding_boxes = object_bounding_boxes
         return object_bounding_boxes
     
     def calculate_surface_features(self):
         print("Computing Surface features ...")
         # --- Surface Features ---
         for i in range(len(self.objects_in_scene)):
+            print(i)
             self.objects_in_scene[i].compute_surface_normals()
 
     def plot_scene(self, ax=None):
@@ -110,13 +112,11 @@ class PointCloudScene:
             if ax != None:
                 obj.plot_bounding_box(ax)
         if ax != None:
-            print(self.rgb)
-            if self.rgb is None:
+            if self.hsv is None:
                 ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=0.01)
             else:
-                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.rgb / 255, s=10)
-            plt.legend()
-            plt.show()  
+                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=10)
+            plt.legend() 
 
 
 
@@ -287,10 +287,10 @@ class PointCloudObject:
         dtype = np.float32
         itemsize = np.dtype(dtype).itemsize
         rgb_values = None
-        if self.rgb is None:
-            rgb_values = np.ones_like(self.xyz_points) * 0.6
-        else:
-            rgb_values = self.rgb
+        # if self.hsv is None:
+        rgb_values = np.ones_like(self.xyz_points) * 0.6
+        # else:
+        #     rgb_values = self.hsv
         
         hex_rgb = []
         for rgb_ in rgb_values:
@@ -305,7 +305,6 @@ class PointCloudObject:
         for i, n in enumerate(['x', 'y', 'z', 'rgb'])]
 
         header = std_msgs.Header(frame_id="/map", stamp=rospy.Time.now())
-
         srv_input = sensor_msgs.PointCloud2(header=header,
                                 height=1,
                                 width=points.shape[0],
@@ -315,12 +314,13 @@ class PointCloudObject:
                                 point_step=(itemsize * 4),
                                 row_step=(itemsize * 4 * points.shape[0]),
                                 data=data
-    )
+        )
         rospy.wait_for_service("calculate_surface_features")
         try:
             srv_calc_surface_features = rospy.ServiceProxy("calculate_surface_features", SurfaceFeatures)
             response = srv_calc_surface_features(srv_input)
             print(response)
+            time.sleep(20)
         except rospy.ServiceException as e:
             print("Service failed %s", e)
 

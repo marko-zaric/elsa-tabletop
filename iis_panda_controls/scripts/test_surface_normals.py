@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from perception.pointcloud_objects import PointCloudScene
 import time
+import pclpy
 
 
 def add_image_bounding_pixels(ax, min_point, max_point):
@@ -17,12 +18,19 @@ def test():
     rospy.init_node("test_point_cloud", anonymous=True)
 
     xyz = np.load("/home/marko/Desktop/IIS_Research/xyz.npy")
-    rgb = np.load("/home/marko/Desktop/IIS_Research/rgb.npy")
+    # rgb = np.load("/home/marko/Desktop/IIS_Research/rgb.npy")
 
     PC = PointCloudScene(debug=False)
 
     PC.detect_objects(xyz)
-    PC.calculate_surface_features()
+    # PC.calculate_surface_features()
+    normals = []
+    for i in range(1, 7):
+        print(i)
+        point_cloud = pclpy.read("/home/marko/Desktop/IIS_Research/surface_normals/" + str(i) + ".pcd", "PointXYZ")
+        out_arr = np.asarray(point_cloud)  
+        normals.append(out_arr)
+        print(out_arr)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')

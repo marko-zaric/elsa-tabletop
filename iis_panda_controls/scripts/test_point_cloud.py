@@ -20,11 +20,11 @@ def test():
     rospy.init_node("test_point_cloud", anonymous=True)
 
     xyz = np.load("/home/marko/Desktop/IIS_Research/xyz.npy")
-    rgb = np.load("/home/marko/Desktop/IIS_Research/rgb.npy")
+    color = np.load("/home/marko/Desktop/IIS_Research/hsv.npy")
 
     PC = PointCloudScene(debug=False)
 
-    PC.detect_objects(xyz, rgb)
+    PC.detect_objects(xyz, color)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
