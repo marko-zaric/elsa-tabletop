@@ -101,6 +101,8 @@ bool srv_calc_surface_features(iis_panda_controls::SurfaceFeatures::Request  &re
     ne_.setInputCloud(cloud);
     ne_.setRadiusSearch(0.03);
     ne_.compute(*pointcloud_normals);
+    
+    // pcl::io::savePCDFileASCII ("/home/marko/0_normals/test.pcd", *pointcloud_normals);
 
     if (enable_normals_)
     {

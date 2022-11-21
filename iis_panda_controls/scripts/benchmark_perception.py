@@ -1,9 +1,8 @@
 import rospy
 import sys
 from tomlkit import string
-sys.path.append("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts")
+# sys.path.append("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts")
 import xacro
-import gazebo_msgs
 from geometry_msgs.msg import Pose
 from gazebo_msgs.srv import SpawnModel
 import argparse
@@ -175,7 +174,7 @@ def new_scene():
             #print(name, euler_z_angle[i] % np.pi)
             state_msg.pose.position.x = xy[0]
             state_msg.pose.position.y = xy[1]
-            state_msg.pose.position.z = 0.01
+            state_msg.pose.position.z = 1.03
             state_msg.pose.orientation.x = orientation[0] #data.pose[i].orientation.x
             state_msg.pose.orientation.y = orientation[1] #data.pose[i].orientation.y
             state_msg.pose.orientation.z = orientation[2] #data.pose[i].orientation.z
@@ -242,7 +241,7 @@ if __name__ == '__main__':
     rate = rospy.Rate(10)
 
     # rospy.Subscriber("/gazebo/model_states", gazebo_msgs.msg.ModelStates, queue_size=1, callback=model_pose_tracker)
-    rospy.Subscriber("/bounding_boxes",BB_Scene , queue_size=1, callback=read_camera)
+    rospy.Subscriber("/scene_description",BB_Scene , queue_size=1, callback=read_camera)
     scene = 0 
 
 
@@ -259,14 +258,17 @@ if __name__ == '__main__':
             rospy.logwarn('---------------------')
             rospy.loginfo('Scene: {0}'.format(scene+1))
             new_poses = new_scene()
+            rospy.loginfo('New scene created')
             count_msgs += 1
         elif count_msgs < 4:
-            rospy.wait_for_message("/bounding_boxes", BB_Scene)
+            rospy.wait_for_message("/scene_description", BB_Scene)
             count_msgs += 1
         else:
             snapshot_bb = copy.copy(BOUNDING_BOXES)
             snapshot_computation_time = COMPUTATION_TIME
+            rospy.loginfo('Comp time snapshoted')
             evaluate(new_poses, snapshot_bb, snapshot_computation_time, scene)
+            rospy.loginfo('Evaluation done')
             scene+=1
             rospy.loginfo('Scene over')
             count_msgs = 0
