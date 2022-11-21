@@ -26,14 +26,23 @@
 
   <!-- This argument sets the initial joint states -->
   <!-- Original initial joint states: 0.000 -0.785 0.0 -2.356 0.0 1.57 0.785-->
-  <arg name="initial_joint_states"
+  <!-- <arg name="initial_joint_states"
     default=" -J panda::panda_joint1 -0.342
               -J panda::panda_joint2 -1.385
               -J panda::panda_joint3 -0.673
               -J panda::panda_joint4 -2.394
               -J panda::panda_joint5 -0.728
               -J panda::panda_joint6 1.172
-              -J panda::panda_joint7 -0.0356"/>
+              -J panda::panda_joint7 -0.0356"/> -->
+  
+   <arg name="initial_joint_states"
+    default=" -J panda_joint1 0
+              -J panda_joint2 0
+              -J panda_joint3 -0.5
+              -J panda_joint4 0.77
+              -J panda_joint5 0.12
+              -J panda_joint6 -2.44
+              -J panda_joint7 2.73"/>
 
   <rosparam command="load" file="$(find panda_gazebo)/config/robot_details.yaml"/>
 

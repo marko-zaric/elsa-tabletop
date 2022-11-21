@@ -85,11 +85,12 @@ def control_thread(rate):
         #     goal_ori = CARTESIAN_POSE['orientation'] #np.quaternion(q.w, q.x,q.y,q.z)
         # else:
         goal_ori = np.array(args.orientation)
+        goal_ori = [-0.00999882432597041, -0.709926301241515, -0.0072665474205158, -0.704167499680457]
+
         
         while error > 0.005:
             curr_pose = copy.deepcopy(CARTESIAN_POSE)
             curr_pos, curr_ori = curr_pose['position'],curr_pose['orientation']
-
             curr_vel = (CARTESIAN_VEL['linear']).reshape([3,1])
             curr_omg = CARTESIAN_VEL['angular'].reshape([3,1])
             delta_pos = (goal_pos - curr_pos).reshape([3,1])

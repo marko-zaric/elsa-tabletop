@@ -47,6 +47,7 @@ class PointCloudScene:
         dbscan = DBSCAN(eps=0.022, min_samples=6)
         dbscan.fit(self.xyz)
         self.dbscan_labels = dbscan.labels_
+        np.save("/home/marko/Desktop/IIS/surface_normals/labels.npy", dbscan.labels_)
 
         labels_set = set(dbscan.labels_)
         benchmark.append(time.time())
@@ -112,7 +113,7 @@ class PointCloudScene:
         if ax != None:
             print(self.rgb)
             if self.rgb is None:
-                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=0.01)
+                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=1)
             else:
                 ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.rgb / 255, s=10)
             plt.legend()

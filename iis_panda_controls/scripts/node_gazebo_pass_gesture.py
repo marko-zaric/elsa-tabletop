@@ -21,7 +21,7 @@ joint_limits = {
 }
 
 
-publish_rate = 100
+publish_rate = 10
 
 CURRENT_POSITION = None
 CURRENT_JOINT = None
@@ -70,10 +70,16 @@ def perform_gesture():
     command_msg.mode = JointCommand.POSITION_MODE
     command_msg.position = [-0.7]
 
-    while np.linalg.norm(np.array(CURRENT_POSITION) - np.array(-2.8)) > 10**-3:
+    while np.linalg.norm(np.array(CURRENT_POSITION) - np.array(-0.7)) > 10**-3:
             joint_command_publisher.publish(command_msg)
             rate.sleep()
+    
     CURRENT_JOINT = "panda_joint6"
+    rospy.loginfo("Recieving new joint")
+    while (True):
+        if not (CURRENT_POSITION == "panda_joint6"):
+            break
+    rospy.loginfo("Recieved messages; Starting Move.")
     for position in [1.57, 1.3, 1.57, 1.3, 1.57]:
         command_msg = JointCommand()
         command_msg.mode = JointCommand.POSITION_MODE

@@ -70,6 +70,7 @@ catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py
                       scripts/node_gazebo_test_joint_movement.py
                       scripts/node_gazebo_single_joint_control.py
                       scripts/node_gazebo_joint_configuration_server.py
+                      scripts/node_gazebo_joint_client.py
                       # GESTURES
                       scripts/node_gazebo_pass_gesture.py
                       scripts/node_gazebo_point_gesture.py

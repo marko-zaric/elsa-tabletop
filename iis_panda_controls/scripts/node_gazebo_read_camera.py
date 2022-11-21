@@ -1,4 +1,3 @@
-from h11 import Data
 import rospy
 import sys
 from perception.pointcloud_objects import PointCloudScene
@@ -14,7 +13,7 @@ from iis_panda_controls.msg import BB_Scene
 arrayBBS = None
 SCENE = None
 DATA_CALLBACK = None
-ENABLE_COLOR = False
+ENABLE_COLOR = True
 SAVE_POINT_CLOUD = True
 
 def ArrayToBBScene(bounding_boxes):
@@ -73,9 +72,9 @@ def listener():
             count_points += 1
 
         if SAVE_POINT_CLOUD:
-            np.save("/home/marko/Desktop/IIS_Research/xyz.npy", xyz)
+            np.save("/home/marko/Desktop/IIS/xyz.npy", xyz)
             if ENABLE_COLOR:
-                np.save("/home/marko/Desktop/IIS_Research/rgb.npy", rgb)
+                np.save("/home/marko/Desktop/IIS/rgb.npy", rgb)
 
 
         PC = PointCloudScene()
