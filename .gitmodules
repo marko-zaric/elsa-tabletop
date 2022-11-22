@@ -1,0 +1,12 @@
+[submodule "franka_ros"]
+	path = franka_ros
+	url = https://github.com/frankaemika/franka_ros.git
+[submodule "franka_ros_interface"]
+	path = franka_ros_interface
+	url = https://github.com/frankaemika/franka_ros_interface.git
+[submodule "orocos_kinematics_dynamics"]
+	path = orocos_kinematics_dynamics
+	url = https://github.com/orocos/orocos_kinematics_dynamics.git
+[submodule "panda_moveit_config"]
+	path = panda_moveit_config
+	url = https://github.com/ros-planning/panda_moveit_config.git
