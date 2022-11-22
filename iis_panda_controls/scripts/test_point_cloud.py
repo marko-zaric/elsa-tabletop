@@ -19,12 +19,12 @@ def add_image_bounding_pixels(ax, min_point, max_point):
 def test():
     rospy.init_node("test_point_cloud", anonymous=True)
 
-    xyz = np.load("/home/marko/Desktop/IIS_Research/xyz.npy")
-    color = np.load("/home/marko/Desktop/IIS_Research/hsv.npy")
+    xyz = np.load("/home/marko/Desktop/IIS/xyz.npy")
+    rgb = np.load("/home/marko/Desktop/IIS/rgb.npy")
 
     PC = PointCloudScene(debug=False)
 
-    PC.detect_objects(xyz, color)
+    PC.detect_objects(xyz, rgb)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
