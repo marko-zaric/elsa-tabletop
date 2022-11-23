@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
-
+  <env name="GAZEBO_MODEL_PATH" value="$(find panda_gazebo)/models/" />  
+  
   <!-- these are the arguments you can pass this launch file, for example paused:=true -->
   <arg name="load_gripper" default="true"/> 
   <arg name="use_custom_action_servers" default="true"/>
@@ -43,6 +44,8 @@
               -J panda_joint5 0.12
               -J panda_joint6 -2.44
               -J panda_joint7 2.73"/>
+
+  
 
   <rosparam command="load" file="$(find panda_gazebo)/config/robot_details.yaml"/>
 
