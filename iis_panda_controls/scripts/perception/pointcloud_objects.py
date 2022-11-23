@@ -1,14 +1,45 @@
 import numpy as np
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull,Delaunay
 import matplotlib.pyplot as plt
 import time
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
+from sklearn.preprocessing import normalize
 from iis_panda_controls.srv import SurfaceFeatures
 import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
 from matplotlib import colors
 
+def in_hull(p, hull):
+    """
+    Test if points in `p` are in `hull`
+
+    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
+    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
+    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
+    will be computed
+    """
+    if not isinstance(hull,Delaunay):
+        hull = Delaunay(hull)
+
+    return hull.find_simplex(p)>=0
+
+def loss_function(x):
+    return (1-np.exp(-x * 1000))
+
+def certainty_measure_color(obj1, obj2):
+    unique, counts = np.unique(in_hull(obj2, obj1), return_counts=True)
+    unique2, counts2 = np.unique(in_hull(obj1, obj2), return_counts=True)
+    stat = dict(zip(unique, counts))
+    stat2 = dict(zip(unique2, counts2))
+    forein_ratio_obj1 = 0
+    forein_ratio_obj2 = 0
+    if True in stat:
+        forein_ratio_obj1 = stat[True] / len(obj1)
+    if True in stat2:
+        forein_ratio_obj2 = stat2[True] / len(obj2)
+    
+    return 1 - (loss_function(forein_ratio_obj1)*0.5 + loss_function(forein_ratio_obj2)*0.5)
 
 '''
 This class describes an object according to the paper Learning Social Affordances and Using Them for Planning 
@@ -27,12 +58,13 @@ class PointCloudScene:
     def __init__(self, debug=False):
         self.objects_in_scene = []
         self.xyz = None
-        self.rgb = None
+        self.hsv = None
         self.dbscan_labels = None
         self.DEBUG = debug
+        self.bounding_boxes = []
     
-    def detect_objects(self, xyz, rgb=None):
-        self.rgb = rgb
+    def detect_objects(self, xyz, hsv=None):
+        self.hsv = hsv
         #xyz, rgb = plane_removal(xyz, rgb, 10**-2)
         print("Detecting Objects...")
         benchmark = []
@@ -44,17 +76,16 @@ class PointCloudScene:
             self.xyz[:,1] = - xyz[:,1]
         benchmark.append(time.time())
 
-        dbscan = DBSCAN(eps=0.022, min_samples=6)
+        dbscan = DBSCAN(eps=0.022, min_samples=6) 
         dbscan.fit(self.xyz)
         self.dbscan_labels = dbscan.labels_
-        np.save("/home/marko/Desktop/IIS/surface_normals/labels.npy", dbscan.labels_)
 
         labels_set = set(dbscan.labels_)
         benchmark.append(time.time())
 
         benchmark.append(time.time())
         objects = []
-        objects_rgb = None
+        objects_color = None
         for i in range(len(labels_set)):
             objects.append([])
 
@@ -62,13 +93,13 @@ class PointCloudScene:
             objects[i].append(xyz_)
         benchmark.append(time.time())
 
-        if rgb is not None:
-            objects_rgb = []
+        if hsv is not None:
+            objects_color = []
             for i in range(len(labels_set)):
-                objects_rgb.append([])
+                objects_color.append([])
 
-            for i, rgb_ in zip(dbscan.labels_, rgb):
-                objects_rgb[i].append(rgb_)
+            for i, rgb_ in zip(dbscan.labels_, hsv):
+                objects_color[i].append(rgb_)
 
 
         for i in range(len(benchmark)-1):
@@ -77,10 +108,53 @@ class PointCloudScene:
         for i, object in enumerate(objects):
             # Checks if panda foot is still in the scene or not
             if np.linalg.norm(np.array(object).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
-                if rgb is None:
+                if hsv is None:
                     self.objects_in_scene.append(PointCloudObject(object))
                 else:
-                    self.objects_in_scene.append(PointCloudObject(object, objects_rgb[i]))
+                    self.objects_in_scene.append(PointCloudObject(object, objects_color[i]))
+                
+        for i, obj in enumerate(self.objects_in_scene):
+            print("Object ", i, ":")
+            clusters = []
+            color_clustering = np.zeros((0,3))
+            xyz_objects = np.zeros((0,3))
+            color_clustering = np.concatenate((color_clustering, obj.rgb), axis = 0)
+            xyz_objects = np.concatenate((xyz_objects, obj.xyz_points), axis = 0)
+            cluster = OPTICS(xi=0.5, min_samples=50) 
+            # cluster.fit(np.concatenate((1.5*color_clustering, normalize(xyz_objects)), axis=1))
+            h = np.concatenate((np.atleast_2d(color_clustering[:,0]).T, np.atleast_2d(np.zeros_like(color_clustering[:,0])).T), axis=1)
+            cluster.fit(h)
+
+            print("colors detected: ", len(set(cluster.labels_)))
+            # If the optics algorithm detects more than one object calculate certainty measure
+            list_of_labels = list(set(cluster.labels_))
+            if len(set(cluster.labels_)) > 1:
+                # Split the xyz values into objects according to color cluster
+                new_objs = [] 
+                for i in range(len(set(cluster.labels_))):
+                    new_objs.append([])
+                for i, xyz_ in zip(cluster.labels_, xyz_objects):
+
+                    new_objs[list_of_labels.index(i)].append([xyz_[0], xyz_[1], xyz_[2]])
+                # Loop trough objects and calculate certainty measure
+                '''
+                The certainty measure is calculated by how much of one object is found in the other:
+                1.) calculate the convex hull of all the objects 
+                2.) check objects pairwise of how many points of each object are in the other one
+                3.) calculate the ratio of object points to foreign points -> certainty measure
+                '''
+                for i, obj in enumerate(new_objs):
+                    obj = np.array(obj)
+                    for j, obj2 in enumerate(new_objs):
+                        if j != i:
+                            obj2 = np.array(obj2)
+                            print("Object certainty: ", certainty_measure_color(obj, obj2))
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111, projection='3d')
+                    ax.scatter(xyz_objects[:,0], xyz_objects[:,1], xyz_objects[:,2], c=cluster.labels_, s=10)
+                    plt.show()
+                    
+            
 
     def create_bounding_boxes(self):
         print("Computing Bounding boxes ...")
@@ -97,13 +171,14 @@ class PointCloudScene:
         for i in range(len(benchmark)-1):
             print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
-        
+        self.bounding_boxes = object_bounding_boxes
         return object_bounding_boxes
     
     def calculate_surface_features(self):
         print("Computing Surface features ...")
         # --- Surface Features ---
         for i in range(len(self.objects_in_scene)):
+            print(i)
             self.objects_in_scene[i].compute_surface_normals()
 
     def plot_scene(self, ax=None):
@@ -111,13 +186,11 @@ class PointCloudScene:
             if ax != None:
                 obj.plot_bounding_box(ax)
         if ax != None:
-            print(self.rgb)
-            if self.rgb is None:
-                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=1)
+            if self.hsv is None:
+                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=0.01)
             else:
-                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.rgb / 255, s=10)
-            plt.legend()
-            plt.show()  
+                ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=10)
+            plt.legend() 
 
 
 
@@ -288,10 +361,10 @@ class PointCloudObject:
         dtype = np.float32
         itemsize = np.dtype(dtype).itemsize
         rgb_values = None
-        if self.rgb is None:
-            rgb_values = np.ones_like(self.xyz_points) * 0.6
-        else:
-            rgb_values = self.rgb
+        # if self.hsv is None:
+        rgb_values = np.ones_like(self.xyz_points) * 0.6
+        # else:
+        #     rgb_values = self.hsv
         
         hex_rgb = []
         for rgb_ in rgb_values:
@@ -306,7 +379,6 @@ class PointCloudObject:
         for i, n in enumerate(['x', 'y', 'z', 'rgb'])]
 
         header = std_msgs.Header(frame_id="/map", stamp=rospy.Time.now())
-
         srv_input = sensor_msgs.PointCloud2(header=header,
                                 height=1,
                                 width=points.shape[0],
@@ -316,12 +388,13 @@ class PointCloudObject:
                                 point_step=(itemsize * 4),
                                 row_step=(itemsize * 4 * points.shape[0]),
                                 data=data
-    )
+        )
         rospy.wait_for_service("calculate_surface_features")
         try:
             srv_calc_surface_features = rospy.ServiceProxy("calculate_surface_features", SurfaceFeatures)
             response = srv_calc_surface_features(srv_input)
             print(response)
+            time.sleep(20)
         except rospy.ServiceException as e:
             print("Service failed %s", e)
 

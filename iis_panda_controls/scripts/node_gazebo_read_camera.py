@@ -1,20 +1,20 @@
 import rospy
-import sys
 from perception.pointcloud_objects import PointCloudScene
 from sensor_msgs.point_cloud2 import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import ctypes
 import struct
 import numpy as np
-import time
 from iis_panda_controls.msg import BoundingBox
 from iis_panda_controls.msg import BB_Scene
+from matplotlib import colors
 
 arrayBBS = None
 SCENE = None
 DATA_CALLBACK = None
 ENABLE_COLOR = True
-SAVE_POINT_CLOUD = True
+SAVE_POINT_CLOUD = False
+HSV_COLOR = True
 
 def ArrayToBBScene(bounding_boxes):
     scene = []
@@ -47,8 +47,9 @@ def listener():
         rospy.wait_for_message("/downsample/output", PointCloud2)
         gen = pc2.read_points(DATA_CALLBACK, skip_nans=True, field_names=("x", "y", "z", "rgb"))
         count_points = 0
+
         xyz = np.zeros((DATA_CALLBACK.width, 3))
-        rgb = np.zeros((DATA_CALLBACK.width, 3))
+        color = np.zeros((DATA_CALLBACK.width, 3))
         for point in gen:
             if ENABLE_COLOR:
                 rgb_float = point[3]
@@ -64,7 +65,10 @@ def listener():
                 g = (pack & 0x0000FF00)>> 8
                 b = (pack & 0x000000FF)
 
-                rgb[count_points, :3] = [r, g, b]
+                if HSV_COLOR:
+                    color[count_points, :3] = colors.rgb_to_hsv([r / 255, g / 255, b / 255])
+                else: 
+                    color[count_points, :3] = [r, g, b]
 
             xyz[count_points, :3] = [point[0], point[1], point[2]]
             
@@ -72,18 +76,21 @@ def listener():
             count_points += 1
 
         if SAVE_POINT_CLOUD:
-            np.save("/home/marko/Desktop/IIS/xyz.npy", xyz)
+            np.save("/home/marko/Desktop/IIS_Research/xyz.npy", xyz)
             if ENABLE_COLOR:
-                np.save("/home/marko/Desktop/IIS/rgb.npy", rgb)
+                if HSV_COLOR:
+                    np.save("/home/marko/Desktop/IIS_Research/hsv.npy", color)
+                else:
+                    np.save("/home/marko/Desktop/IIS_Research/rgb.npy", color)
 
 
         PC = PointCloudScene()
-
-        PC.detect_objects(xyz)
-        PC.create_bounding_boxes()
-        PC.calculate_surface_features()
-        # SCENE = ArrayToBBScene(PC.create_bounding_boxes(xyz))
-        # pub.publish(SCENE)
+        if not (xyz.shape == (0,3) or color.shape == (0,3)):
+            PC.detect_objects(xyz, color)
+            PC.create_bounding_boxes()
+            # PC.calculate_surface_features()
+            SCENE = ArrayToBBScene(PC.bounding_boxes)
+            pub.publish(SCENE) 
     
 
 if __name__ == '__main__':

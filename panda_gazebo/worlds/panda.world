@@ -29,7 +29,7 @@
     <!-- <include>
       <uri>model://coke_can</uri>
       <name>canpoint</name>
-      <pose>0.6 -0.1 1.03 0 0 0</pose>
+      <pose>0.6 0 1.03 0 0 0</pose>
     </include> -->
 
     <!-- Point coke -->
@@ -47,7 +47,7 @@
     </include>
 
     <include>
-      <uri>model://coke_can</uri>
+      <uri>model://tin_can</uri>
       <pose>0.3 0.0 1.03 0 0 0</pose>
       <name>can1</name>
     </include>
@@ -58,22 +58,39 @@
       <pose>0.3 -0.3 1.03 0 0 0.7</pose>
     </include>
 
-    <include>
+    <!-- <include>
       <name>cube_large</name>
       <uri>model://cube_7_5cm</uri>
       <pose>0.4 -0.15 1.03 0 0 0.4</pose>
+    </include> -->
+    <include>
+      <name>cube_large</name>
+      <uri>model://cube_7_5cm</uri>
+      <pose>0.4 -0.15 1.03 0 0 0</pose>
     </include>
+
+    <include>
+      <name>cube_large2</name>
+      <uri>model://cube_7_5cm_red</uri>
+      <pose>0.475 -0.15 1.03 0 0 0</pose>
+    </include>
+
+    <!-- <include>
+      <name>beer</name>
+      <uri>model://beer</uri>
+      <pose>0.4 -0.15 1.03 0 0 0.4</pose>
+    </include> -->
     
     <include>
       <name>brick1</name>
-      <uri>model://rectangle1</uri>
+      <uri>model://brick</uri>
       <pose>0.6 -0.2 1.03 0 0 0.5</pose>
     </include>
 
 
     <include>
       <name>brick2</name>
-      <uri>model://rectangle1</uri>
+      <uri>model://rectangle</uri>
       <pose>0.7 0.2 1.03 0 0 1.7</pose>
     </include>
 

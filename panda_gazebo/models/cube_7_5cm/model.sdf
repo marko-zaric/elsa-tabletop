@@ -1,4 +1,4 @@
-<?xml version="1.0" ?>
+<?xml version="1.0"?>
 <sdf version="1.5">
   <model name="cube_7_5cm">
     <link name="link">
@@ -51,12 +51,15 @@
             <size>0.075 0.075 0.075</size>
           </box>
         </geometry>
+
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-        </material>
+          <!-- Wheel material -->
+          <ambient>1 0 0 1</ambient>
+          <diffuse>0.1 0.1 0.2 1</diffuse>
+          <specular>0 0 0 0</specular>
+          <emissive>0 0 0 1</emissive>
+        </material> <!-- End wheel material -->
+
       </visual>
 
     </link>
