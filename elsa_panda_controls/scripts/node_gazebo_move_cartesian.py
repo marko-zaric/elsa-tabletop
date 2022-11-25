@@ -6,8 +6,8 @@ import threading
 from franka_core_msgs.msg import EndPointState, JointCommand, RobotState
 from sensor_msgs.msg import JointState
 import quaternion
-from iis_panda_controls.msg import StrArray
-from iis_panda_controls.srv import JointConfig
+from elsa_panda_controls.msg import StrArray
+from elsa_panda_controls.srv import JointConfig
 import argparse
 
 parser = argparse.ArgumentParser()

@@ -2,8 +2,8 @@
 import rospy
 import numpy as np
 # from visualization_msgs.msg import *
-from iis_panda_controls.srv import JointConfig
-from iis_panda_controls.msg import StrArray
+from elsa_panda_controls.srv import JointConfig
+from elsa_panda_controls.msg import StrArray
 import argparse
 from sensor_msgs.msg import JointState
 

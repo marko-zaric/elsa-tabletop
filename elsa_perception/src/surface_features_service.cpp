@@ -1,7 +1,7 @@
 #include "ros/ros.h"
-#include "iis_panda_controls/SurfaceFeatures.h"
-#include "iis_perception_msgs/Feature.h"
-#include "iis_perception_msgs/FeatureVector.h"
+#include "elsa_perception_msgs/SurfaceFeatures.h"
+#include "elsa_perception_msgs/Feature.h"
+#include "elsa_perception_msgs/FeatureVector.h"
 
 #include <thread>
 #include <pcl/point_types.h>
@@ -18,8 +18,8 @@
 #include <math.h>
 #include <vector>
 
-typedef iis_panda_controls::Feature Feature;
-typedef iis_panda_controls::FeatureVector FeatureVector;
+typedef elsa_perception_msgs::Feature Feature;
+typedef elsa_perception_msgs::FeatureVector FeatureVector;
 
 int N_NORMAL_HISTOGRAM_BINS = 20;
 int N_CURVATURE_HISTOGRAM_BINS = 20;
@@ -68,8 +68,8 @@ void calcFeature(Feature &feature, cv::Mat feature_data)
         feature.his[ci] = ((float *)feature_hist.data)[ci];
 }
 
-bool srv_calc_surface_features(iis_panda_controls::SurfaceFeatures::Request  &req,
-         iis_panda_controls::SurfaceFeatures::Response &res)
+bool srv_calc_surface_features(elsa_perception_msgs::SurfaceFeatures::Request  &req,
+         elsa_perception_msgs::SurfaceFeatures::Response &res)
 {
     pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> ne_;
     pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> pce_;
@@ -125,20 +125,20 @@ bool srv_calc_surface_features(iis_panda_controls::SurfaceFeatures::Request  &re
         }
 
         Feature feature_zen;
-        feature_zen.val_type = iis_panda_controls::Feature::DISPERSIVE_VALUED;
+        feature_zen.val_type = elsa_perception_msgs::Feature::DISPERSIVE_VALUED;
         feature_zen.range_min = 0;
         feature_zen.range_max = 360;
         feature_zen.n_hist_bins = N_NORMAL_HISTOGRAM_BINS;
-        feature_zen.type = iis_panda_controls::Feature::NORMAL_ZEN;
+        feature_zen.type = elsa_perception_msgs::Feature::NORMAL_ZEN;
 
         calcFeature(feature_zen, normals_zen);
 
         Feature feature_azi;
-        feature_azi.val_type = iis_panda_controls::Feature::DISPERSIVE_VALUED;
+        feature_azi.val_type = elsa_perception_msgs::Feature::DISPERSIVE_VALUED;
         feature_azi.range_min = 0;
         feature_azi.range_max = 360;
         feature_azi.n_hist_bins = N_NORMAL_HISTOGRAM_BINS;
-        feature_azi.type = iis_panda_controls::Feature::NORMAL_AZI;
+        feature_azi.type = elsa_perception_msgs::Feature::NORMAL_AZI;
 
         calcFeature(feature_azi, normals_azi);
 
@@ -168,16 +168,16 @@ bool srv_calc_surface_features(iis_panda_controls::SurfaceFeatures::Request  &re
         pce_.compute(princip_curves_);
 
         Feature feature_curvs_min;
-        feature_curvs_min.val_type = iis_panda_controls::Feature::DISPERSIVE_VALUED;
+        feature_curvs_min.val_type = elsa_perception_msgs::Feature::DISPERSIVE_VALUED;
         Feature feature_curvs_max;
-        feature_curvs_max.val_type = iis_panda_controls::Feature::DISPERSIVE_VALUED;
+        feature_curvs_max.val_type = elsa_perception_msgs::Feature::DISPERSIVE_VALUED;
         feature_curvs_min.range_min = 0;
         feature_curvs_min.range_max = 1;
         feature_curvs_min.n_hist_bins = N_CURVATURE_HISTOGRAM_BINS;
-        feature_curvs_min.type = iis_panda_controls::Feature::CURV_MIN;
+        feature_curvs_min.type = elsa_perception_msgs::Feature::CURV_MIN;
 
         feature_curvs_max = feature_curvs_min;
-        feature_curvs_max.type = iis_panda_controls::Feature::CURV_MAX;
+        feature_curvs_max.type = elsa_perception_msgs::Feature::CURV_MAX;
 
         cv::Mat curvs_min = cv::Mat(1, princip_curves_.points.size(), CV_32F);
         cv::Mat curvs_max = cv::Mat(1, princip_curves_.points.size(), CV_32F);
@@ -213,10 +213,10 @@ bool srv_calc_surface_features(iis_panda_controls::SurfaceFeatures::Request  &re
 
         FeatureVector feature_shape_indices;
         Feature feature_sid; // shape index
-        feature_sid.val_type = iis_panda_controls::Feature::DISPERSIVE_VALUED;
+        feature_sid.val_type = elsa_perception_msgs::Feature::DISPERSIVE_VALUED;
         feature_sid.range_min = -1.0;
         feature_sid.range_max = 1.0;
-        feature_sid.type = iis_panda_controls::Feature::SHAPE_INDEX;
+        feature_sid.type = elsa_perception_msgs::Feature::SHAPE_INDEX;
         feature_sid.n_hist_bins = N_SHAPE_ID_HISTOGRAM_BINS;
 
         calcFeature(feature_sid, shape_indices);

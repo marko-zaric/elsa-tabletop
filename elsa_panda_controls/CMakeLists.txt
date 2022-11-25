@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(iis_panda_controls)
+project(elsa_panda_controls)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
@@ -9,15 +9,15 @@ find_package(catkin REQUIRED COMPONENTS
     franka_moveit
     panda_sim_moveit
     panda_gazebo
-    iis_perception_msgs
+    elsa_perception
     std_msgs
     message_generation
     genmsg
 )
 
-find_package (OpenCV 4.0.0 REQUIRED)
+# find_package (OpenCV 4.0.0 REQUIRED)
 
-catkin_python_setup()
+# catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -51,12 +51,10 @@ catkin_package(
     franka_moveit
     panda_sim_moveit
     panda_gazebo
-    iis_perception_msgs
+    elsa_perception
 )
 
 catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py 
-                      # PERCEPTION
-                      scripts/node_gazebo_read_camera.py 
                       # TASK SPACE CONTROL
                       scripts/node_gazebo_joint_command_publisher.py 
                       scripts/node_gazebo_read_cartesian_pose.py 
@@ -72,10 +70,6 @@ catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py
                       scripts/node_gazebo_pass_gesture.py
                       scripts/node_gazebo_point_gesture.py
                       scripts/node_gazebo_grabby_motion.py
-                      # TESTS
-                      scripts/test_point_cloud.py
-                      scripts/test_bounding_boxes.py
-                      scripts/test_surface_normals.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ###########
@@ -87,22 +81,8 @@ catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
 )
 
 
-## PC C++ Nodes
-find_package(PCL 1.2 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 
-add_executable(subscribe_point_cloud src/sub_pc.cpp)
-target_link_libraries(subscribe_point_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-
-add_executable(save_point_cloud src/save_point_cloud.cpp)
-target_link_libraries(save_point_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-
-add_executable(surface_feature_service src/surface_features_service.cpp)
-target_link_libraries(surface_feature_service ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
 

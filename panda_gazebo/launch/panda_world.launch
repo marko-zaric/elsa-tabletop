@@ -112,8 +112,8 @@
       <node pkg="panda_gazebo" type="force_neutral_pose.py" name="startup_script"/>
   </group> 
 
-  <node pkg="iis_panda_controls" type="surface_feature_service" name="surface_feature_service"/>
-  <node pkg="iis_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/>
+  <node pkg="elsa_perception" type="surface_feature_service" name="surface_feature_service"/>
+  <node pkg="elsa_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/>
 
   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
 

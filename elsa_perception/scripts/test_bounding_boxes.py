@@ -1,7 +1,7 @@
 import rospy
 import numpy as np
 import matplotlib.pyplot as plt
-from iis_panda_controls.msg import BoundingBox
+from elsa_perception_msgs.msg import BoundingBox
 from perception.pointcloud_objects import PointCloudScene
 
 def add_image_bounding_pixels(ax, min_point, max_point):

@@ -5,8 +5,8 @@ import sensor_msgs.point_cloud2 as pc2
 import ctypes
 import struct
 import numpy as np
-from iis_perception_msg.msg import BoundingBox
-from iis_perception_msg.msg import BB_Scene
+from elsa_perception_msgs.msg import BoundingBox
+from elsa_perception_msgs.msg import BB_Scene
 from matplotlib import colors
 
 arrayBBS = None

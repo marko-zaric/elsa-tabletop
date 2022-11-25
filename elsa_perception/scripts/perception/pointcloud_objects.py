@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import time
 from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
 from sklearn.preprocessing import normalize
-from iis_panda_controls.srv import SurfaceFeatures
+from elsa_perception_msgs.srv import SurfaceFeatures
 import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs

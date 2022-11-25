@@ -1,7 +1,6 @@
 import rospy
 import sys
 from tomlkit import string
-sys.path.append("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts")
 import argparse
 import numpy as np
 import random

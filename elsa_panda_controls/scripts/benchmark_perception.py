@@ -16,7 +16,7 @@ import numpy as np
 from itertools import product
 import random
 import copy
-from iis_panda_controls.msg import BB_Scene
+from elsa_perception_msgs.msg import BB_Scene
 import csv
 from datetime import datetime
 

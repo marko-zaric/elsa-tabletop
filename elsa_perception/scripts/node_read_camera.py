@@ -1,16 +1,12 @@
-from h11 import Data
 import rospy
-import sys
-sys.path.append("/home/marko/Desktop/IIS_Research/catkin_workspaces/panda_catkin_ws/src/panda_simulator/iis_panda_controls/scripts")
-from pointcloud_bb import pointcloudBB
+from perception.pointcloud_bb import pointcloudBB
 from sensor_msgs.point_cloud2 import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import ctypes
 import struct
 import numpy as np
-import time
-from iis_panda_controls.msg import BoundingBox
-from iis_panda_controls.msg import BB_Scene
+from elsa_perception_msgs.msg import BoundingBox
+from elsa_perception_msgs.msg import BB_Scene
 # sensor_msgs/PointCloud2
 
 arrayBBS = None

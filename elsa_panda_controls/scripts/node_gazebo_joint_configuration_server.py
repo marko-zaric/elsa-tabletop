@@ -5,8 +5,8 @@ import numpy as np
 from franka_core_msgs.msg import JointCommand
 import argparse
 from sensor_msgs.msg import JointState
-from iis_panda_controls.msg import StrArray
-from iis_panda_controls.srv import JointConfig, JointConfigResponse
+from elsa_panda_controls.msg import StrArray
+from elsa_panda_controls.srv import JointConfig, JointConfigResponse
 
 joint_limits = {
     "panda_joint1": [-2.8973, 2.8973],
