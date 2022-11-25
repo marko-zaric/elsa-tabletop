@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
-
+  <env name="GAZEBO_MODEL_PATH" value="$(find panda_gazebo)/models/" />  
   <!-- these are the arguments you can pass this launch file, for example paused:=true -->
   <arg name="load_gripper" default="true"/> 
   <arg name="use_custom_action_servers" default="true"/>

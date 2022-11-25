@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
     franka_moveit
     panda_sim_moveit
     panda_gazebo
+    iis_perception_msgs
     std_msgs
     message_generation
     genmsg
@@ -24,16 +25,11 @@ catkin_python_setup()
 
 add_message_files(
   FILES
-  BoundingBox.msg
-  BB_Scene.msg
-  Feature.msg
-  FeatureVector.msg
   StrArray.msg
 )
 
 add_service_files(
   FILES
-  SurfaceFeatures.srv
   JointConfig.srv
 )
 
@@ -55,6 +51,7 @@ catkin_package(
     franka_moveit
     panda_sim_moveit
     panda_gazebo
+    iis_perception_msgs
 )
 
 catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py 

@@ -5,8 +5,8 @@ import sensor_msgs.point_cloud2 as pc2
 import ctypes
 import struct
 import numpy as np
-from iis_panda_controls.msg import BoundingBox
-from iis_panda_controls.msg import BB_Scene
+from iis_perception_msg.msg import BoundingBox
+from iis_perception_msg.msg import BB_Scene
 from matplotlib import colors
 
 arrayBBS = None

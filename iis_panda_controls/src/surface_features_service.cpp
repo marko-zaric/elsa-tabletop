@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include "iis_panda_controls/SurfaceFeatures.h"
-#include "iis_panda_controls/Feature.h"
-#include "iis_panda_controls/FeatureVector.h"
+#include "iis_perception_msgs/Feature.h"
+#include "iis_perception_msgs/FeatureVector.h"
 
 #include <thread>
 #include <pcl/point_types.h>
