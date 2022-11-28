@@ -8,27 +8,6 @@
   
   <xacro:include filename="$(find franka_panda_description)/robots/panda_arm.xacro"/>
   
-  <!-- Real Sense Camera -->
-  <xacro:include filename="$(find franka_panda_description)/robots/_d435.urdf.xacro" />
-  <link name="camera_base">
-    <!-- <visual>
-      <origin xyz="0.4 0 1.5" rpy="0 1.57 0" />
-      <geometry>
-        <box size="0.03 0.05 0.03" />
-      </geometry>
-    </visual> -->
-  </link>
-  <joint name="cam_joint" type="fixed">
-    <parent link="panda_link0"/>
-    <child link="camera_base"/>
-  </joint>
-
-  <xacro:sensor_d435 name="camera" topics_ns="camera" parent="camera_base" publish_pointcloud="true">
-    <origin xyz="0.5 0 1" rpy="0 1.57 0" />
-  </xacro:sensor_d435>  
-  <!-- Real Sense Camera End -->
-
-
   <xacro:if value="$(arg load_gripper)">
     <xacro:include filename="$(find franka_panda_description)/robots/hand.xacro"/>
     <xacro:hand ns="panda" rpy="0 0 ${-pi/4}" connected_to="panda_link8"/>

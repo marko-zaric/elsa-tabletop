@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+  <node pkg="elsa_perception" type="surface_feature_service" name="surface_feature_service"/>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="downsample" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/camera/depth/color/points" />
+    <rosparam>
+      leaf_size: 0.01
+    </rosparam>
+  </node>
+
+  <node pkg="elsa_perception" type="node_gazebo_read_camera.py" name="read_cam_data" />
+  
+</launch>
