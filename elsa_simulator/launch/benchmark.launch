@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
-  <env name="GAZEBO_MODEL_PATH" value="$(find panda_gazebo)/models/" />  
+  <env name="GAZEBO_MODEL_PATH" value="$(find elsa_simulator)/models/" />  
   <!-- these are the arguments you can pass this launch file, for example paused:=true -->
   <arg name="load_gripper" default="true"/> 
-  <arg name="use_custom_action_servers" default="true"/>
-  <arg name="start_moveit" default="false"/>
-  <arg name="load_demo_planning_scene" default="false"/>
+
   <arg name="force_neutral_pose" default="true"/> <!-- Use a separate script to send robot to the neutral pose in the beginning of simulation -->
   
   <arg name="paused" default="false"/>
@@ -38,7 +36,7 @@
   <rosparam command="load" file="$(find panda_gazebo)/config/robot_details.yaml"/>
 
 
-  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find franka_panda_description)/robots/panda_arm_hand.urdf.xacro load_gripper:=$(arg load_gripper) load_gazebo:=$(arg load_gazebo)"/>
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find elsa_simulator)/robots/panda_and_camera_model.urdf.xacro load_gripper:=$(arg load_gripper) load_gazebo:=$(arg load_gazebo)"/>
 
 
   <param name="/arm/root_name" value="panda_link0" />
@@ -52,7 +50,7 @@
 
   <!-- We resume the logic in empty_world.launch, changing the name of the world to be launched -->
   <include if="$(arg load_gazebo)" file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find panda_gazebo)/worlds/panda.world"/>
+    <arg name="world_name" value="$(find elsa_simulator)/worlds/benchmark.world"/>
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="$(arg paused)"/>
@@ -76,39 +74,10 @@
       <arg name="load_gripper" value="$(arg load_gripper)" />
   </include>
 
-  <group if="$(eval arg('use_custom_action_servers') == true)">
-    <node pkg="panda_sim_custom_action_server" type="start_joint_trajectory_server.py" name="joint_trajectory_server_emulator"/>
-
-      <group if="$(eval arg('load_gripper') == true)">
-        <node pkg="panda_sim_custom_action_server" type="start_gripper_action_server.py" name="gripper_action_server_emulator"/>
-      </group>
-
-    <group if="$(eval arg('start_moveit') == true)">
-      <include file="$(find panda_sim_moveit)/launch/sim_move_group.launch">
-        <arg name="load_gripper" value="$(arg load_gripper)" />
-        <arg name="info" value="true" />
-      </include>
-    </group>
-
-  </group>
-
-   <group if="$(eval arg('load_demo_planning_scene') == true)">
-    <node name="demo_scene_loader" pkg="franka_moveit" type="create_demo_planning_scene.py" respawn="false" output="screen" />
-  </group>
-
   <group if="$(eval arg('force_neutral_pose') == true)">
-      <node pkg="panda_gazebo" type="force_neutral_pose.py" name="startup_script"/>
+      <node pkg="elsa_simulator" type="force_neutral_pose.py" name="startup_script"/>
   </group> 
   
-  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
-  <node pkg="elsa_perception" type="surface_feature_service" name="surface_feature_service"/>
+  <include file="$(find elsa_simulator)/launch/perception.launch"/>
 
-  <node pkg="nodelet" type="nodelet" name="downsample" args="load pcl/VoxelGrid pcl_manager" output="screen">
-    <remap from="~input" to="/camera/depth/color/points" />
-    <rosparam>
-      leaf_size: 0.01
-    </rosparam>
-  </node>
-
-  <node pkg="elsa_perception" type="node_gazebo_read_camera.py" name="read_cam_data" />
 </launch>
