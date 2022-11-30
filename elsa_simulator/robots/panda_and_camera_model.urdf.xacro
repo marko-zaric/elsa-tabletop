@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
+  <xacro:arg name="robot_name" default="panda"/>
+  <xacro:arg name="camera_name" default="camera"/>
+  <xacro:arg name="publish_pointcloud" default="true"/>
+
+  <xacro:include filename="$(find franka_panda_description)/robots/panda_arm_hand.urdf.xacro"/>
+  
+  <!-- Real Sense Camera -->
+  <xacro:include filename="$(find elsa_simulator)/robots/_d435.urdf.xacro"/>
+  <link name="camera_base">
+    <!-- <visual>
+      <origin xyz="0.4 0 1.5" rpy="0 1.57 0" />
+      <geometry>
+        <box size="0.03 0.05 0.03" />
+      </geometry>
+    </visual> -->
+  </link>
+  <joint name="cam_joint" type="fixed">
+    <parent link="panda_link0"/>
+    <child link="camera_base"/>
+  </joint>
+
+  <xacro:sensor_d435 name="$(arg camera_name)" topics_ns="camera" parent="camera_base">
+    <origin xyz="0.5 0 1" rpy="0 1.57 0" />
+  </xacro:sensor_d435>  
+
+  <!-- Realsense Gazebo Plugin -->
+  <!-- <xacro:gazebo_d435 camera_name="$(arg camera_name)" reference_link="$(arg camera_name)_link" topics_ns="$(arg camera_name)" depth_optical_frame="$(arg camera_name)_depth_optical_frame" color_optical_frame="$(arg camera_name)_color_optical_frame" infrared1_optical_frame="$(arg camera_name)_left_ir_optical_frame" infrared2_optical_frame="$(arg camera_name)_right_ir_optical_frame" publish_pointcloud="$(arg publish_pointcloud)"/> -->
+  
+  <!-- Real Sense Camera End -->
+
+</robot>

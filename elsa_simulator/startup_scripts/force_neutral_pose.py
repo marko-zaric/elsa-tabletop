@@ -14,7 +14,9 @@ if __name__ == "__main__":
 
     command_msg = JointCommand()
     command_msg.names = ["panda_joint%d" % (idx) for idx in range(1, 8)]
-    command_msg.position = [0.000,- 0.785,0.0,- 2.356,0.0,1.57,0.785]
+    # Original natural pose [0.000,- 0.785,0.0,- 2.356,0.0,1.57,0.785]
+    # Neutral pose [-0.342,-1.385 ,-0.673,-2.394,-0.728,1.172 ,-0.0356]
+    command_msg.position = [-0.342,-1.385 ,-0.673,-2.394,-0.728,1.172 ,-0.0356]
     command_msg.mode = JointCommand.POSITION_MODE
 
     
