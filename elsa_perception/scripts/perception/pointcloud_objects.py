@@ -10,37 +10,6 @@ import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
 from matplotlib import colors
 
-def in_hull(p, hull):
-    """
-    Test if points in `p` are in `hull`
-
-    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
-    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
-    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
-    will be computed
-    """
-    if not isinstance(hull,Delaunay):
-        hull = Delaunay(hull)
-
-    return hull.find_simplex(p)>=0
-
-def loss_function(x):
-    return (1-np.exp(-x * 1000))
-
-def certainty_measure_color(obj1, obj2):
-    unique, counts = np.unique(in_hull(obj2, obj1), return_counts=True)
-    unique2, counts2 = np.unique(in_hull(obj1, obj2), return_counts=True)
-    stat = dict(zip(unique, counts))
-    stat2 = dict(zip(unique2, counts2))
-    forein_ratio_obj1 = 0
-    forein_ratio_obj2 = 0
-    if True in stat:
-        forein_ratio_obj1 = stat[True] / len(obj1)
-    if True in stat2:
-        forein_ratio_obj2 = stat2[True] / len(obj2)
-    
-    return 1 - (loss_function(forein_ratio_obj1)*0.5 + loss_function(forein_ratio_obj2)*0.5)
-
 '''
 This class describes an object according to the paper Learning Social Affordances and Using Them for Planning 
 (https://escholarship.org/content/qt9cj412wg/qt9cj412wg.pdf) by Uyanik et. al (2013)
@@ -117,14 +86,13 @@ class PointCloudScene:
             for i, obj in enumerate(self.objects_in_scene):
                 print("Object ", i, ":")
                 clusters = []
-                color_clustering = np.zeros((0,3))
-                xyz_objects = np.zeros((0,3))
-                color_clustering = np.concatenate((color_clustering, obj.rgb), axis = 0)
-                xyz_objects = np.concatenate((xyz_objects, obj.xyz_points), axis = 0)
-                cluster = OPTICS(xi=0.5, min_samples=50) 
-                # cluster.fit(np.concatenate((1.5*color_clustering, normalize(xyz_objects)), axis=1))
-                h = np.concatenate((np.atleast_2d(color_clustering[:,0]).T, np.atleast_2d(np.zeros_like(color_clustering[:,0])).T), axis=1)
-                cluster.fit(h)
+                h_value = np.array(obj.rgb)[:,0] * 2*np.pi
+                cluster = DBSCAN(eps=0.25, min_samples=10) 
+                xyz_objects = np.array(obj.xyz_points)
+                h_x = np.sin(h_value)
+                h_y = np.cos(h_value)
+                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1)
+                cluster.fit(h_circle)
     
                 print("colors detected: ", len(set(cluster.labels_)))
                 # If the optics algorithm detects more than one object calculate certainty measure
@@ -134,7 +102,7 @@ class PointCloudScene:
                     new_objs = [] 
                     for i in range(len(set(cluster.labels_))):
                         new_objs.append([])
-                    for i, xyz_ in zip(cluster.labels_, xyz_objects):
+                    for i, xyz_ in zip(cluster.labels_, obj.xyz_points):
                     
                         new_objs[list_of_labels.index(i)].append([xyz_[0], xyz_[1], xyz_[2]])
                     # Loop trough objects and calculate certainty measure
@@ -150,10 +118,10 @@ class PointCloudScene:
                             if j != i:
                                 obj2 = np.array(obj2)
                                 print("Object certainty: ", certainty_measure_color(obj, obj2))
-                        # fig = plt.figure()
-                        # ax = fig.add_subplot(111, projection='3d')
-                        # ax.scatter(xyz_objects[:,0], xyz_objects[:,1], xyz_objects[:,2], c=cluster.labels_, s=10)
-                        # plt.show()
+                        fig = plt.figure()
+                        ax = fig.add_subplot(111, projection='3d')
+                        ax.scatter(xyz_objects[:,0], xyz_objects[:,1], xyz_objects[:,2], c=cluster.labels_, s=10)
+                        plt.show()
                     
             
 
@@ -503,3 +471,40 @@ class PointCloudObject:
 
     def change_camera_transformation(self, T):
         self.T = T
+
+
+def in_hull(p, hull):
+    """
+    Test if points in `p` are in `hull`
+
+    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
+    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
+    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
+    will be computed
+    """
+    if not isinstance(hull,Delaunay):
+        hull = Delaunay(hull)
+
+    return hull.find_simplex(p)>=0
+
+def loss_function(x):
+    return (1-np.exp(-x * 1000))
+
+def certainty_measure_color(obj1, obj2):
+    if len(obj1) >= 5 and len(obj2) >= 5:
+        unique, counts = np.unique(in_hull(obj2, obj1), return_counts=True)
+        unique2, counts2 = np.unique(in_hull(obj1, obj2), return_counts=True)
+        stat = dict(zip(unique, counts))
+        stat2 = dict(zip(unique2, counts2))
+        forein_ratio_obj1 = 0
+        forein_ratio_obj2 = 0
+        if True in stat:
+            forein_ratio_obj1 = stat[True] / len(obj1)
+        if True in stat2:
+            forein_ratio_obj2 = stat2[True] / len(obj2)
+        
+        return 1 - (loss_function(forein_ratio_obj1)*0.5 + loss_function(forein_ratio_obj2)*0.5)
+    else:
+        return 0
+    
+    
