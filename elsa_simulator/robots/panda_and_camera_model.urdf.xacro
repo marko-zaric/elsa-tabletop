@@ -21,13 +21,9 @@
     <child link="camera_base"/>
   </joint>
 
-  <xacro:sensor_d435 name="$(arg camera_name)" topics_ns="camera" parent="camera_base">
+  <!--  -->
+  <xacro:sensor_d435 name="$(arg camera_name)" topics_ns="camera" parent="camera_base"> 
     <origin xyz="0.5 0 1" rpy="0 1.57 0" />
   </xacro:sensor_d435>  
-
-  <!-- Realsense Gazebo Plugin -->
-  <!-- <xacro:gazebo_d435 camera_name="$(arg camera_name)" reference_link="$(arg camera_name)_link" topics_ns="$(arg camera_name)" depth_optical_frame="$(arg camera_name)_depth_optical_frame" color_optical_frame="$(arg camera_name)_color_optical_frame" infrared1_optical_frame="$(arg camera_name)_left_ir_optical_frame" infrared2_optical_frame="$(arg camera_name)_right_ir_optical_frame" publish_pointcloud="$(arg publish_pointcloud)"/> -->
   
-  <!-- Real Sense Camera End -->
-
 </robot>

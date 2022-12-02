@@ -9,37 +9,8 @@ import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
 from matplotlib import colors
-
-def in_hull(p, hull):
-    """
-    Test if points in `p` are in `hull`
-
-    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
-    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
-    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
-    will be computed
-    """
-    if not isinstance(hull,Delaunay):
-        hull = Delaunay(hull)
-
-    return hull.find_simplex(p)>=0
-
-def loss_function(x):
-    return (1-np.exp(-x * 1000))
-
-def certainty_measure_color(obj1, obj2):
-    unique, counts = np.unique(in_hull(obj2, obj1), return_counts=True)
-    unique2, counts2 = np.unique(in_hull(obj1, obj2), return_counts=True)
-    stat = dict(zip(unique, counts))
-    stat2 = dict(zip(unique2, counts2))
-    forein_ratio_obj1 = 0
-    forein_ratio_obj2 = 0
-    if True in stat:
-        forein_ratio_obj1 = stat[True] / len(obj1)
-    if True in stat2:
-        forein_ratio_obj2 = stat2[True] / len(obj2)
-    
-    return 1 - (loss_function(forein_ratio_obj1)*0.5 + loss_function(forein_ratio_obj2)*0.5)
+import copy
+from itertools import combinations
 
 '''
 This class describes an object according to the paper Learning Social Affordances and Using Them for Planning 
@@ -53,6 +24,8 @@ The properties are divided into surface and spatial features.
 '''
 
 MEAN_PANDA_FOOT = np.array([ 0.01781263, -0.46853645,  0.04416075])
+
+COLOR_SEGMENTATION = True
 
 class PointCloudScene:
     def __init__(self, debug=False):
@@ -113,30 +86,35 @@ class PointCloudScene:
                 else:
                     self.objects_in_scene.append(PointCloudObject(object, objects_color[i]))
 
-        if hsv is not None:        
-            for i, obj in enumerate(self.objects_in_scene):
-                print("Object ", i, ":")
-                clusters = []
-                color_clustering = np.zeros((0,3))
-                xyz_objects = np.zeros((0,3))
-                color_clustering = np.concatenate((color_clustering, obj.rgb), axis = 0)
-                xyz_objects = np.concatenate((xyz_objects, obj.xyz_points), axis = 0)
-                cluster = OPTICS(xi=0.5, min_samples=50) 
-                # cluster.fit(np.concatenate((1.5*color_clustering, normalize(xyz_objects)), axis=1))
-                h = np.concatenate((np.atleast_2d(color_clustering[:,0]).T, np.atleast_2d(np.zeros_like(color_clustering[:,0])).T), axis=1)
-                cluster.fit(h)
-    
-                print("colors detected: ", len(set(cluster.labels_)))
-                # If the optics algorithm detects more than one object calculate certainty measure
+
+        if hsv is not None and COLOR_SEGMENTATION == True:        
+            for whole_obj_indx, obj in enumerate(self.objects_in_scene):
+                # print("Object ", whole_obj_indx, ":")
+                # xyz_object = np.array(obj.xyz_points)
+
+                # Parametrize h value to circle in for cyclical clustering
+                h_value = np.array(obj.rgb)[:,0] * 2*np.pi
+                h_x = np.sin(h_value)
+                h_y = np.cos(h_value)
+                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T,np.atleast_2d(h_x).T, np.atleast_2d(h_x).T), axis=1)
+                
+                cluster = DBSCAN(eps=0.9, min_samples=10) 
+                cluster.fit(h_circle)
+
+                # print("colors detected: ", len(set(cluster.labels_)))
+
+                # If the clustering algorithm detects more than one object calculate certainty measure
                 list_of_labels = list(set(cluster.labels_))
                 if len(set(cluster.labels_)) > 1:
                     # Split the xyz values into objects according to color cluster
                     new_objs = [] 
+                    new_objs_colors = []
                     for i in range(len(set(cluster.labels_))):
                         new_objs.append([])
-                    for i, xyz_ in zip(cluster.labels_, xyz_objects):
-                    
+                        new_objs_colors.append([])
+                    for i, xyz_, hsv_ in zip(cluster.labels_, obj.xyz_points, obj.rgb):
                         new_objs[list_of_labels.index(i)].append([xyz_[0], xyz_[1], xyz_[2]])
+                        new_objs_colors[list_of_labels.index(i)].append([hsv_[0], hsv_[1], hsv_[2]])
                     # Loop trough objects and calculate certainty measure
                     '''
                     The certainty measure is calculated by how much of one object is found in the other:
@@ -144,17 +122,24 @@ class PointCloudScene:
                     2.) check objects pairwise of how many points of each object are in the other one
                     3.) calculate the ratio of object points to foreign points -> certainty measure
                     '''
-                    for i, obj in enumerate(new_objs):
-                        obj = np.array(obj)
-                        for j, obj2 in enumerate(new_objs):
-                            if j != i:
-                                obj2 = np.array(obj2)
-                                print("Object certainty: ", certainty_measure_color(obj, obj2))
-                        # fig = plt.figure()
-                        # ax = fig.add_subplot(111, projection='3d')
-                        # ax.scatter(xyz_objects[:,0], xyz_objects[:,1], xyz_objects[:,2], c=cluster.labels_, s=10)
-                        # plt.show()
-                    
+                    list_indices = range(len(new_objs))
+                    combos = list(combinations(list_indices, 2))
+                    color_seperated_objects = []
+                    certainties = []
+                    for i, j in combos:
+                        # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
+                        certainty = certainty_measure_color(new_objs[i], new_objs[j])
+                        certainties.append(certainty)
+                        if certainty > 0.8:
+                            color_seperated_objects.append(i)
+                            color_seperated_objects.append(j)
+                    print(all(c > 0.8 for c in certainties))
+                    if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
+                        # print("Poping: ", whole_obj_indx)
+                        self.objects_in_scene.pop(whole_obj_indx)
+                        for indx in color_seperated_objects:
+                            self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+
             
 
     def create_bounding_boxes(self):
@@ -503,3 +488,40 @@ class PointCloudObject:
 
     def change_camera_transformation(self, T):
         self.T = T
+
+
+def in_hull(p, hull):
+    """
+    Test if points in `p` are in `hull`
+
+    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
+    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
+    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
+    will be computed
+    """
+    if not isinstance(hull,Delaunay):
+        hull = Delaunay(hull)
+
+    return hull.find_simplex(p)>=0
+
+def loss_function(x):
+    return (1-np.exp(-x * 1000))
+
+def certainty_measure_color(obj1, obj2):
+    if len(obj1) >= 5 and len(obj2) >= 5:
+        unique, counts = np.unique(in_hull(obj2, obj1), return_counts=True)
+        unique2, counts2 = np.unique(in_hull(obj1, obj2), return_counts=True)
+        stat = dict(zip(unique, counts))
+        stat2 = dict(zip(unique2, counts2))
+        forein_ratio_obj1 = 0
+        forein_ratio_obj2 = 0
+        if True in stat:
+            forein_ratio_obj1 = stat[True] / len(obj1)
+        if True in stat2:
+            forein_ratio_obj2 = stat2[True] / len(obj2)
+        
+        return 1 - (loss_function(forein_ratio_obj1)*0.5 + loss_function(forein_ratio_obj2)*0.5)
+    else:
+        return 0
+    
+    
