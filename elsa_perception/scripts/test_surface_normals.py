@@ -17,12 +17,16 @@ def test():
     rospy.init_node("test_point_cloud", anonymous=True)
 
     xyz = np.load("/home/marko/Desktop/IIS_Research/xyz.npy")
-    # rgb = np.load("/home/marko/Desktop/IIS_Research/rgb.npy")
+    hsv = np.load("/home/marko/Desktop/IIS_Research/hsv.npy")
 
     PC = PointCloudScene(debug=False)
 
-    PC.detect_objects(xyz)
-    print(PC.calculate_surface_features())
+    PC.detect_objects(xyz,hsv)
+    PC.create_bounding_boxes()
+    PC.calculate_surface_features()
+
+    # for i, obj in enumerate(PC.objects_in_scene):
+    #     print("Object ", i)
 
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')

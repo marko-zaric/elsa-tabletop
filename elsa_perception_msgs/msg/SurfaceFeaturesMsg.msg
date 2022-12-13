@@ -1,0 +1,5 @@
+Feature normal_azimut
+Feature normal_zenith
+Feature min_curvature
+Feature max_curvature
+Feature shape_index

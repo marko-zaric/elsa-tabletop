@@ -1,0 +1,3 @@
+BoundingBox spatial_features
+SurfaceFeaturesMsg surface_features
+float32[3] mean_color

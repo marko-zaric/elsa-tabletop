@@ -5,6 +5,7 @@ import time
 from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
 from sklearn.preprocessing import normalize
 from elsa_perception_msgs.srv import SurfaceFeatures
+from elsa_perception_msgs.msg import Feature, FeatureVector, SurfaceFeaturesMsg, PhysicalFeatures, BoundingBox, PhysicalScene
 import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
@@ -93,7 +94,7 @@ class PointCloudScene:
                 # xyz_object = np.array(obj.xyz_points)
 
                 # Parametrize h value to circle in for cyclical clustering
-                h_value = np.array(obj.rgb)[:,0] * 2*np.pi
+                h_value = np.array(obj.hsv)[:,0] * 2*np.pi
                 h_x = np.sin(h_value)
                 h_y = np.cos(h_value)
                 h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T,np.atleast_2d(h_x).T, np.atleast_2d(h_x).T), axis=1)
@@ -112,7 +113,7 @@ class PointCloudScene:
                     for i in range(len(set(cluster.labels_))):
                         new_objs.append([])
                         new_objs_colors.append([])
-                    for i, xyz_, hsv_ in zip(cluster.labels_, obj.xyz_points, obj.rgb):
+                    for i, xyz_, hsv_ in zip(cluster.labels_, obj.xyz_points, obj.hsv):
                         new_objs[list_of_labels.index(i)].append([xyz_[0], xyz_[1], xyz_[2]])
                         new_objs_colors[list_of_labels.index(i)].append([hsv_[0], hsv_[1], hsv_[2]])
                     # Loop trough objects and calculate certainty measure
@@ -133,7 +134,7 @@ class PointCloudScene:
                         if certainty > 0.8:
                             color_seperated_objects.append(i)
                             color_seperated_objects.append(j)
-                    print(all(c > 0.8 for c in certainties))
+                    # print(all(c > 0.8 for c in certainties))
                     if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
                         # print("Poping: ", whole_obj_indx)
                         self.objects_in_scene.pop(whole_obj_indx)
@@ -167,6 +168,19 @@ class PointCloudScene:
             print(i)
             self.objects_in_scene[i].compute_surface_normals()
 
+    def create_physical_scene_msg(self):
+        
+        list_physical_features = []
+
+        for obj in self.objects_in_scene:
+            list_physical_features.append(obj.create_physical_features_msg())
+
+        physical_scene = PhysicalScene(list_physical_features)
+
+        return physical_scene
+
+
+
     def plot_scene(self, ax=None):
         for obj in self.objects_in_scene:
             if ax != None:
@@ -187,9 +201,9 @@ class PointCloudObject:
                    [0, 0, 1, 0],
                    [0, 0, 0, 1]])
 
-    def __init__(self, object, rgb = None):
+    def __init__(self, object, hsv = None):
         self.xyz_points = np.array(object)
-        self.rgb = rgb
+        self.hsv = hsv
 
         # Object Pose Camera
         self.center_x_camera = 0
@@ -208,9 +222,11 @@ class PointCloudObject:
         self.size_y = 0
         self.size_z = 0
 
-        self.surface_normals_vector = []
-        self.surface_normals_angles = []
-        self.priciple_curvatures = []
+        self.normal_azimut = None
+        self.normal_zenith = None
+        self.min_curvature = None
+        self.max_curvature = None
+        self.shape_index = None
 
     def compute_bounding_box(self):
         self.is_circular = self.__is_object_circular__(self.xyz_points)
@@ -379,13 +395,43 @@ class PointCloudObject:
         try:
             srv_calc_surface_features = rospy.ServiceProxy("calculate_surface_features", SurfaceFeatures)
             response = srv_calc_surface_features(srv_input)
-            print(response)
-            time.sleep(20)
+            self.normal_azimut = response.surface_features.features[0] 
+            self.normal_zenith = response.surface_features.features[1]
+            self.min_curvature = response.surface_features.features[2]
+            self.max_curvature = response.surface_features.features[3]
+            self.shape_index = response.surface_features.features[4]
+            
         except rospy.ServiceException as e:
             print("Service failed %s", e)
 
-            
-            
+    def create_physical_features_msg(self):
+        physical_features = PhysicalFeatures()
+        bounding_box = BoundingBox()
+        surface_features = SurfaceFeaturesMsg()
+
+        bounding_box.x = self.center_x
+        bounding_box.y = self.center_y
+        bounding_box.z = self.center_z
+        bounding_box.phi = self.theta
+        bounding_box.dx = self.size_x 
+        bounding_box.dy = self.size_y 
+        bounding_box.dz = self.size_z 
+
+        surface_features.normal_azimut = self.normal_azimut 
+        surface_features.normal_zenith = self.normal_zenith 
+        surface_features.min_curvature = self.min_curvature 
+        surface_features.max_curvature = self.max_curvature 
+        surface_features.shape_index   = self.shape_index   
+        
+        physical_features.spatial_features = bounding_box
+        physical_features.surface_features = surface_features
+
+        if self.hsv == None:
+            physical_features.mean_color = [-1,-1,-1] 
+        else:
+            physical_features.mean_color = np.mean(self.hsv, axis=0)
+
+        return physical_features  
         
             
 
@@ -463,20 +509,20 @@ class PointCloudObject:
         ax.scatter(corner_points[:,0], corner_points[:,1], corner_points[:,2], marker='^')
 
 
-    def plot_surface_normals(self, ax=None, special_list = []):
-        soa = np.array(self.surface_normals_vector)
-        soa.T[3:] = soa.T[3:]/100
-        #X, Y, Z, U, V, W = zip(*soa)
-        if ax == None:
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
+    # def plot_surface_normals(self, ax=None, special_list = []):
+    #     soa = np.array(self.surface_normals_vector)
+    #     soa.T[3:] = soa.T[3:]/100
+    #     #X, Y, Z, U, V, W = zip(*soa)
+    #     if ax == None:
+    #         fig = plt.figure()
+    #         ax = fig.add_subplot(111, projection='3d')
 
-        for i, coords in enumerate(soa):
-            X, Y, Z, U, V, W = coords
-            if i in special_list:
-                ax.quiver(X, Y, Z, U, V, W, color="red")
-            else:
-                ax.quiver(X, Y, Z, U, V, W, color="grey")
+    #     for i, coords in enumerate(soa):
+    #         X, Y, Z, U, V, W = coords
+    #         if i in special_list:
+    #             ax.quiver(X, Y, Z, U, V, W, color="red")
+    #         else:
+    #             ax.quiver(X, Y, Z, U, V, W, color="grey")
 
     def plot_point_cloud(self, ax=None, marker_size = 20):
         if ax == None:

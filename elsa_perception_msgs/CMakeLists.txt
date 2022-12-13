@@ -21,6 +21,9 @@ add_message_files(
   BB_Scene.msg
   FeatureVector.msg
   Feature.msg
+  SurfaceFeaturesMsg.msg
+  PhysicalFeatures.msg 
+  PhysicalScene.msg
 )
 
 ## Generate services in the 'srv' folder
