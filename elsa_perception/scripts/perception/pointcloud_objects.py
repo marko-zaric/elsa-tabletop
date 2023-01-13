@@ -5,8 +5,9 @@ import time
 from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
 from sklearn.preprocessing import normalize
 from elsa_perception_msgs.srv import SurfaceFeatures
-from elsa_perception_msgs.msg import Feature, FeatureVector, SurfaceFeaturesMsg, PhysicalFeatures, BoundingBox, PhysicalScene 
 from elsa_object_database.srv import RegisteredObjects
+from elsa_perception_msgs.msg import PhysicalScene, PhysicalFeatures, BoundingBox, SurfaceFeaturesMsg, ClusteredPointcloud
+
 import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
@@ -180,9 +181,10 @@ class PointCloudScene:
         for obj in self.objects_in_scene:
             list_physical_features.append(obj.create_physical_features_msg(self.registered_objs, self.registered_objs_values))
 
-        physical_scene = PhysicalScene(list_physical_features)
+        physical_scene = PhysicalScene(physical_scene=list_physical_features, number_of_objects=len(self.objects_in_scene))
 
         return physical_scene
+
 
     def registered_obj_client(self):
         rospy.wait_for_service("get_registered_obj_service")
@@ -201,6 +203,18 @@ class PointCloudScene:
                     self.registered_objs_values = np.vstack((self.registered_objs_values, np.array([[x,y]])))
         except rospy.ServiceException as e:
             print("Registered Objects Service failed %s", e)
+
+    def create_clustered_pointcloud_msg(self):
+        points_with_label = np.empty((4,), dtype=np.float32)
+        for i, obj in enumerate(self.objects_in_scene):
+            points = obj.xyz_points
+            object = np.array(points)
+            object = np.hstack((object, np.atleast_2d(np.ones(len(points))*i).T))
+            points_with_label = np.vstack((points_with_label, object))
+        points_with_label = points_with_label.T
+        CLUSTERED_PC = ClusteredPointcloud(x=points_with_label[0].tolist(), y=points_with_label[1].tolist(), z=points_with_label[2].tolist(), cluster_label=points_with_label[3].tolist())
+        return CLUSTERED_PC
+
 
     def plot_scene(self, ax=None):
         for obj in self.objects_in_scene:
@@ -455,6 +469,7 @@ class PointCloudObject:
             x = np.cos(np.pi*2*hsv_mean[0])
             y = np.sin(np.pi*2*hsv_mean[0])
 
+
             total = np.abs(registered_obj_values - np.array([[x,y]]))
             label_index = np.sum(total,axis=1).argmin()
 
@@ -464,6 +479,7 @@ class PointCloudObject:
             physical_features.obj_identity = registered_obj_names[label_index]
 
         return physical_features
+
             
 
     def __is_object_circular__(self, object):

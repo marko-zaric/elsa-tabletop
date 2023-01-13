@@ -76,6 +76,7 @@ def listener():
             PC.create_bounding_boxes()
             PC.calculate_surface_features()
             SCENE = PC.create_physical_scene_msg()
+
             SCENE_stamped = PhysicalSceneStamped()
             SCENE_stamped.physical_scene = SCENE.physical_scene
             SCENE_stamped.header = std_msgs.msg.Header()
