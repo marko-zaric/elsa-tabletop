@@ -24,6 +24,7 @@ add_message_files(
   SurfaceFeaturesMsg.msg
   PhysicalFeatures.msg 
   PhysicalScene.msg
+  ClusteredPointcloud.msg
 )
 
 ## Generate services in the 'srv' folder

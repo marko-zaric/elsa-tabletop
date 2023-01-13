@@ -7,7 +7,7 @@ import sensor_msgs.point_cloud2 as pc2
 import ctypes
 import struct
 import numpy as np
-from elsa_perception_msgs.msg import PhysicalScene
+from elsa_perception_msgs.msg import PhysicalScene, ClusteredPointcloud
 from matplotlib import colors
 
 SCENE = None
@@ -24,7 +24,8 @@ def callback(data):
 def listener():
     rospy.init_node("read_cam_data", anonymous=True)
     rospy.Subscriber("/downsample/output", PointCloud2, callback=callback)
-    pub = rospy.Publisher('/scene_description', PhysicalScene, queue_size=1)
+    pub = rospy.Publisher('elsa_perception/scene_description', PhysicalScene, queue_size=1)
+    pub_cluster = rospy.Publisher('elsa_perception/clustered_pointcloud', ClusteredPointcloud , queue_size=1)
     while not rospy.is_shutdown():
         rospy.wait_for_message("/downsample/output", PointCloud2)
         gen = pc2.read_points(DATA_CALLBACK, skip_nans=True, field_names=("x", "y", "z", "rgb"))
@@ -73,6 +74,10 @@ def listener():
             PC.calculate_surface_features()
             SCENE = PC.create_physical_scene_msg()
             pub.publish(SCENE) 
+            # POINTCLOUD_CLUSTER = PC.create_clustered_pointcloud_msg()
+            # pub_cluster.publish(POINTCLOUD_CLUSTER)
+
+
     
 
 if __name__ == '__main__':
