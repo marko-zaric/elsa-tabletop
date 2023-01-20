@@ -47,9 +47,9 @@
         </geometry>
         <material>
           <!-- Wheel material -->
-          <ambient>0.75 0.75 0.75 0.8</ambient>
-          <diffuse>0.1 0.1 0.2 1</diffuse>
-          <specular>0.2 0.2 0.2 64</specular>
+          <ambient>0.96 0.157 0.569 0.8</ambient>
+          <diffuse>0.7 0.7 0.7 1</diffuse>
+          <specular>0.01 0.01 0.01 1</specular>
           <emissive>0 0 0 1</emissive>
         </material> <!-- End wheel material -->
       </visual>
