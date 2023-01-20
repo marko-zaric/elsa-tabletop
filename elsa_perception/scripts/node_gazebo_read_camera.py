@@ -11,6 +11,7 @@ from elsa_perception_msgs.msg import PhysicalScene, PhysicalSceneStamped, FullSc
 from matplotlib import colors
 import std_msgs.msg
 
+
 SCENE = None
 DATA_CALLBACK = None
 ENABLE_COLOR = True
@@ -76,6 +77,13 @@ def listener():
             PC.create_bounding_boxes()
             PC.calculate_surface_features()
             SCENE = PC.create_physical_scene_msg()
+
+
+            # POINTCLOUD_CLUSTER = PC.create_clustered_pointcloud_msg()
+            # print(POINTCLOUD_CLUSTER.cluster_label)
+            # pub_cluster.publish(POINTCLOUD_CLUSTER)
+
+
 
             SCENE_stamped = PhysicalSceneStamped()
             SCENE_stamped.physical_scene = SCENE.physical_scene
