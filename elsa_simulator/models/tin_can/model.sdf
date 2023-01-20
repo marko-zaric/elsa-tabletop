@@ -46,12 +46,11 @@
           </mesh>
         </geometry>
         <material>
-          <!-- Wheel material -->
-          <ambient>0.75 0.75 0.75 0.8</ambient>
-          <diffuse>0.1 0.1 0.2 1</diffuse>
-          <specular>0.2 0.2 0.2 64</specular>
-          <emissive>0 0 0 1</emissive>
-        </material> <!-- End wheel material -->
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Purple</name>
+          </script>
+        </material>
       </visual>
     </link>
   </model>

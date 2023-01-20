@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import ConvexHull,Delaunay
+from matplotlib.path import Path
 import matplotlib.pyplot as plt
 import time
 from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
@@ -91,15 +92,16 @@ class PointCloudScene:
         if hsv is not None and COLOR_SEGMENTATION == True:        
             for whole_obj_indx, obj in enumerate(self.objects_in_scene):
                 # print("Object ", whole_obj_indx, ":")
-                # xyz_object = np.array(obj.xyz_points)
+                xyz_object = normalize(np.array(obj.xyz_points)) 
 
                 # Parametrize h value to circle in for cyclical clustering
                 h_value = np.array(obj.hsv)[:,0] * 2*np.pi
+                s_value = np.array(obj.hsv)[:,1]
+                v_value = np.array(obj.hsv)[:,2]
                 h_x = np.sin(h_value)
                 h_y = np.cos(h_value)
-                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T,np.atleast_2d(h_x).T, np.atleast_2d(h_x).T), axis=1)
-                
-                cluster = DBSCAN(eps=0.9, min_samples=10) 
+                h_circle = np.concatenate((xyz_object, np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #
+                cluster = DBSCAN(eps=0.8, min_samples=10) 
                 cluster.fit(h_circle)
 
                 # print("colors detected: ", len(set(cluster.labels_)))
@@ -127,6 +129,10 @@ class PointCloudScene:
                     combos = list(combinations(list_indices, 2))
                     color_seperated_objects = []
                     certainties = []
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111, projection='3d')
+                    ax.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2],c = cluster.labels_, s=20) 
+                    plt.show()
                     for i, j in combos:
                         # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
                         certainty = certainty_measure_color(new_objs[i], new_objs[j])
@@ -134,13 +140,13 @@ class PointCloudScene:
                         if certainty > 0.8:
                             color_seperated_objects.append(i)
                             color_seperated_objects.append(j)
-                    # print(all(c > 0.8 for c in certainties))
+                    print(certainties)
                     if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
+                        
                         # print("Poping: ", whole_obj_indx)
                         self.objects_in_scene.pop(whole_obj_indx)
                         for indx in color_seperated_objects:
                             self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
-
             
 
     def create_bounding_boxes(self):
@@ -183,9 +189,15 @@ class PointCloudScene:
         points_with_label = np.empty((4,), dtype=np.float32)
         for i, obj in enumerate(self.objects_in_scene):
             points = obj.xyz_points
-            object = np.array(points)
-            object = np.hstack((object, np.atleast_2d(np.ones(len(points))*i).T))
-            points_with_label = np.vstack((points_with_label, object))
+            print("Object ", i)
+            print("Num Points: ", len(points))
+            # fig = plt.figure()
+            # ax = fig.add_subplot(111, projection='3d')
+            # ax.scatter(points[:,0], points[:,1], points[:,2],c = colors.hsv_to_rgb(obj.hsv), s=20)
+            # plt.show()
+            object_pts = np.array(points)
+            object_pts = np.hstack((object_pts, np.atleast_2d(np.ones(len(points))*i).T))
+            points_with_label = np.vstack((points_with_label, object_pts))
         points_with_label = points_with_label.T
         CLUSTERED_PC = ClusteredPointcloud(x=points_with_label[0].tolist(), y=points_with_label[1].tolist(), z=points_with_label[2].tolist(), cluster_label=points_with_label[3].tolist())
         return CLUSTERED_PC
@@ -546,19 +558,35 @@ class PointCloudObject:
         self.T = T
 
 
-def in_hull(p, hull):
-    """
-    Test if points in `p` are in `hull`
+# def in_hull(p, hull):
+#     """
+#     Test if points in `p` are in `hull`
 
-    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
-    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
-    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
-    will be computed
-    """
-    if not isinstance(hull,Delaunay):
-        hull = Delaunay(hull)
+#     `p` should be a `NxK` coordinates of `N` points in `K` dimensions
+#     `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
+#     coordinates of `M` points in `K`dimensions for which Delaunay triangulation
+#     will be computed
+#     """
+#     if not isinstance(hull,Delaunay):
+#         hull = Delaunay(hull)
 
-    return hull.find_simplex(p)>=0
+#     return hull.find_simplex(p)>=0
+
+def in_hull(test_points, hull_object):
+    # Assume points are shape (n, d), and that hull has f facets.
+    hull = ConvexHull(hull_object)
+    print("Volume ", hull.volume)
+    # A is shape (f, d) and b is shape (f, 1).
+    A, b = hull.equations[:, :-1], hull.equations[:, -1:]
+    eps = np.finfo(np.float32).eps
+    # The hull is defined as all points x for which Ax + b <= 0.
+    # We compare to a small positive value to account for floating
+    # point issues.
+    #
+    # Assuming x is shape (m, d), output is boolean shape (m,).
+    return np.all(np.asarray(test_points) @ A.T + b.T < eps, axis=1)
+
+
 
 def loss_function(x):
     return (1-np.exp(-x * 1000))
@@ -569,13 +597,14 @@ def certainty_measure_color(obj1, obj2):
         unique2, counts2 = np.unique(in_hull(obj1, obj2), return_counts=True)
         stat = dict(zip(unique, counts))
         stat2 = dict(zip(unique2, counts2))
+        print(stat)
+        print(stat2)
         forein_ratio_obj1 = 0
         forein_ratio_obj2 = 0
         if True in stat:
             forein_ratio_obj1 = stat[True] / len(obj1)
         if True in stat2:
             forein_ratio_obj2 = stat2[True] / len(obj2)
-        
         return 1 - (loss_function(forein_ratio_obj1)*0.5 + loss_function(forein_ratio_obj2)*0.5)
     else:
         return 0

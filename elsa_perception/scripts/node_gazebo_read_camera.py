@@ -9,6 +9,7 @@ import struct
 import numpy as np
 from elsa_perception_msgs.msg import PhysicalScene, ClusteredPointcloud
 from matplotlib import colors
+import matplotlib.pyplot as plt
 
 SCENE = None
 DATA_CALLBACK = None
@@ -74,8 +75,9 @@ def listener():
             PC.calculate_surface_features()
             SCENE = PC.create_physical_scene_msg()
             pub.publish(SCENE) 
-            # POINTCLOUD_CLUSTER = PC.create_clustered_pointcloud_msg()
-            # pub_cluster.publish(POINTCLOUD_CLUSTER)
+            POINTCLOUD_CLUSTER = PC.create_clustered_pointcloud_msg()
+            # print(POINTCLOUD_CLUSTER.cluster_label)
+            pub_cluster.publish(POINTCLOUD_CLUSTER)
 
 
     

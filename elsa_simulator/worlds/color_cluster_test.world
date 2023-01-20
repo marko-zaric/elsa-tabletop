@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+
+    <light type="directional" name="light">
+      <light_on>true</light_on>
+      <pose>0 0 2 0 0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>.1 .1 .1 1</specular>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+
+    <include> 
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <include>
+      <uri>model://big_table</uri>
+      <name>table</name>
+      <pose>0.5 0 0 0 0 0</pose>
+    </include>
+
+
+
+
+    <include>
+      <name>cube_large</name>
+      <uri>model://cube_7_5cm</uri>
+      <pose>0.4 -0.15 1.03 0 0 0</pose>
+      
+    </include>
+
+    <include>
+      <name>cube_large2</name>
+      <uri>model://cube_7_5cm_red</uri>
+      <pose>0.475 -0.15 1.03 0 0 0</pose>
+    </include>
+    <gazebo reference="cube_large" material="Gazebo/Purple"/> 
+
+
+
+    <physics type="ode">
+      <real_time_update_rate>1000.0</real_time_update_rate>
+    </physics>
+    
+    <gravity>
+      0.0 0.0 -9.81
+    </gravity>
+
+    <gui fullscreen='0'>
+    </gui>
+
+  </world>
+</sdf>

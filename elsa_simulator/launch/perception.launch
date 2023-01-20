@@ -11,6 +11,6 @@
     </rosparam>
   </node>
 
-  <node pkg="elsa_perception" type="node_gazebo_read_camera.py" name="read_cam_data" />
+  <!-- <node pkg="elsa_perception" type="node_gazebo_read_camera.py" name="read_cam_data" /> -->
   
 </launch>
