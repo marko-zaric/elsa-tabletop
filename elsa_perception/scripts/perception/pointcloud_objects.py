@@ -5,7 +5,8 @@ import time
 from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
 from sklearn.preprocessing import normalize
 from elsa_perception_msgs.srv import SurfaceFeatures
-from elsa_perception_msgs.msg import Feature, FeatureVector, SurfaceFeaturesMsg, PhysicalFeatures, BoundingBox, PhysicalScene
+from elsa_perception_msgs.msg import Feature, FeatureVector, SurfaceFeaturesMsg, PhysicalFeatures, BoundingBox, PhysicalScene 
+from elsa_object_database.srv import RegisteredObjects
 import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
@@ -36,6 +37,10 @@ class PointCloudScene:
         self.dbscan_labels = None
         self.DEBUG = debug
         self.bounding_boxes = []
+
+        self.registered_objs = []
+        self.registered_objs_values = np.empty((2,))
+        self.registered_obj_client()        
     
     def detect_objects(self, xyz, hsv=None):
         self.hsv = hsv
@@ -173,13 +178,29 @@ class PointCloudScene:
         list_physical_features = []
 
         for obj in self.objects_in_scene:
-            list_physical_features.append(obj.create_physical_features_msg())
+            list_physical_features.append(obj.create_physical_features_msg(self.registered_objs, self.registered_objs_values))
 
         physical_scene = PhysicalScene(list_physical_features)
 
         return physical_scene
 
-
+    def registered_obj_client(self):
+        rospy.wait_for_service("get_registered_obj_service")
+        self.registered_objs = []
+        self.registered_objs_values = np.empty((2,))
+        try:
+            get_registered_objs = rospy.ServiceProxy("get_registered_obj_service", RegisteredObjects)
+            response = get_registered_objs()
+            for i, obj in enumerate(response.registered_objects):
+                self.registered_objs.append(obj.object_name)
+                x = np.cos(obj.h_value*2*np.pi)
+                y = np.sin(obj.h_value*2*np.pi)
+                if i == 0:
+                    self.registered_objs_values = np.array([[x,y]])
+                else:
+                    self.registered_objs_values = np.vstack((self.registered_objs_values, np.array([[x,y]])))
+        except rospy.ServiceException as e:
+            print("Registered Objects Service failed %s", e)
 
     def plot_scene(self, ax=None):
         for obj in self.objects_in_scene:
@@ -404,7 +425,7 @@ class PointCloudObject:
         except rospy.ServiceException as e:
             print("Service failed %s", e)
 
-    def create_physical_features_msg(self):
+    def create_physical_features_msg(self, registered_obj_names, registered_obj_values):
         physical_features = PhysicalFeatures()
         bounding_box = BoundingBox()
         surface_features = SurfaceFeaturesMsg()
@@ -429,7 +450,17 @@ class PointCloudObject:
         if self.hsv == None:
             physical_features.mean_color = [-1,-1,-1] 
         else:
-            physical_features.mean_color = np.mean(self.hsv, axis=0)
+            hsv_mean = np.mean(self.hsv, axis=0)
+            physical_features.mean_color = hsv_mean
+            x = np.cos(np.pi*2*hsv_mean[0])
+            y = np.sin(np.pi*2*hsv_mean[0])
+
+            total = np.abs(registered_obj_values - np.array([[x,y]]))
+            label_index = np.sum(total,axis=1).argmin()
+
+            physical_features.obj_identity = registered_obj_names[label_index]
+            
+
 
         return physical_features  
         
