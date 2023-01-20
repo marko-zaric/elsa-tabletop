@@ -54,9 +54,9 @@
 
         <material>
           <!-- Wheel material -->
-          <ambient>1 0 0 1</ambient>
-          <diffuse>0.1 0.1 0.2 1</diffuse>
-          <specular>0 0 0 0</specular>
+          <ambient>0 0 1 1</ambient>
+          <diffuse>0.7 0.7 0.7 1</diffuse>
+          <specular>0.01 0.01 0.01 1</specular>
           <emissive>0 0 0 1</emissive>
         </material> <!-- End wheel material -->
 
