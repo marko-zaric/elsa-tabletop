@@ -52,7 +52,6 @@
           <specular>0.01 0.01 0.01 1</specular>
           <emissive>0 0 0 1</emissive>
         </material> <!-- End wheel material -->
-
       </visual>
     </link>
   </model>
