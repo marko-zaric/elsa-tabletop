@@ -458,12 +458,12 @@ class PointCloudObject:
             total = np.abs(registered_obj_values - np.array([[x,y]]))
             label_index = np.sum(total,axis=1).argmin()
 
+            # debugging non-unicity of object class (color)
+            #rospy.logerr(registered_obj_names[label_index])
+            #rospy.logerr(label_index)
             physical_features.obj_identity = registered_obj_names[label_index]
-            
 
-
-        return physical_features  
-        
+        return physical_features
             
 
     def __is_object_circular__(self, object):

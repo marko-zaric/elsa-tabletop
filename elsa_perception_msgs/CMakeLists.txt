@@ -24,6 +24,7 @@ add_message_files(
   SurfaceFeaturesMsg.msg
   PhysicalFeatures.msg 
   PhysicalScene.msg
+  PhysicalSceneStamped.msg
 )
 
 ## Generate services in the 'srv' folder

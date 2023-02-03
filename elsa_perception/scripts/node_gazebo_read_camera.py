@@ -7,8 +7,9 @@ import sensor_msgs.point_cloud2 as pc2
 import ctypes
 import struct
 import numpy as np
-from elsa_perception_msgs.msg import PhysicalScene
+from elsa_perception_msgs.msg import PhysicalScene, PhysicalSceneStamped
 from matplotlib import colors
+import std_msgs.msg
 
 SCENE = None
 DATA_CALLBACK = None
@@ -25,6 +26,8 @@ def listener():
     rospy.init_node("read_cam_data", anonymous=True)
     rospy.Subscriber("/downsample/output", PointCloud2, callback=callback)
     pub = rospy.Publisher('/scene_description', PhysicalScene, queue_size=1)
+    scene_stamped_pub = rospy.Publisher('/scene_description_stamped', PhysicalSceneStamped, queue_size=1)
+    seq_number = 0
     while not rospy.is_shutdown():
         rospy.wait_for_message("/downsample/output", PointCloud2)
         gen = pc2.read_points(DATA_CALLBACK, skip_nans=True, field_names=("x", "y", "z", "rgb"))
@@ -72,7 +75,14 @@ def listener():
             PC.create_bounding_boxes()
             PC.calculate_surface_features()
             SCENE = PC.create_physical_scene_msg()
-            pub.publish(SCENE) 
+            SCENE_stamped = PhysicalSceneStamped()
+            SCENE_stamped.physical_scene = SCENE.physical_scene
+            SCENE_stamped.header = std_msgs.msg.Header()
+            SCENE_stamped.header.stamp = rospy.Time.now()
+            SCENE_stamped.header.seq = seq_number
+            seq_number += 1
+            pub.publish(SCENE)
+            scene_stamped_pub.publish(SCENE_stamped)
     
 
 if __name__ == '__main__':
