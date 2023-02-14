@@ -87,7 +87,7 @@ def listener():
             FULLSCENE_stamped.header = std_msgs.msg.Header()
             FULLSCENE_stamped.header.stamp = SCENE_stamped.header.stamp
             FULLSCENE_stamped.header.seq = SCENE_stamped.header.seq
-            FULLSCENE_stamped.social_features.append(SocialFeatures())
+            FULLSCENE_stamped.social_features.append(SocialFeatures(person_identity = "PlaceHolderHuman"))
 
             pub.publish(SCENE)
             scene_stamped_pub.publish(SCENE_stamped)
