@@ -1,5 +1,4 @@
 string person_identity
-float32[3] mean_color
 float32 torso_x
 float32 torso_y
 float32 torso_z
