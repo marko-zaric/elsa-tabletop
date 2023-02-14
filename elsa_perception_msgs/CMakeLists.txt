@@ -25,6 +25,8 @@ add_message_files(
   PhysicalFeatures.msg 
   PhysicalScene.msg
   PhysicalSceneStamped.msg
+  SocialFeatures.msg
+  FullSceneStamped.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -1,0 +1,11 @@
+string person_identity
+float32[3] mean_color
+float32 torso_x
+float32 torso_y
+float32 torso_z
+float32 torso_roll
+float32 torso_pitch
+float32 torso_yaw
+float32 gaze_roll
+float32 gaze_pitch
+float32 gaze_yaw
