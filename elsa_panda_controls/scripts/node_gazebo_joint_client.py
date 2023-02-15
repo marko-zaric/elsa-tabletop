@@ -7,9 +7,10 @@ from elsa_panda_controls.msg import StrArray
 import argparse
 from sensor_msgs.msg import JointState
 
-# parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 # parser.add_argument("-j", "--joint", required=False, help="Tests range of certain joint.", type=str, default="panda_joint1")
-# args = parser.parse_args()
+parser.add_argument("-v", "--joint_values",nargs='+', required=True, help="Pass joint values for all 7 panda joints", type=float)
+args = parser.parse_args()
 
 joint_limits = {
     "panda_joint1": [-2.8973, 2.8973],
@@ -30,7 +31,9 @@ def publish():
 
     joints = StrArray()
     joints.list_of_strings = ["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4" ,"panda_joint5", "panda_joint6", "panda_joint7"]
-    values = [-0.501997270431858, 0.765960214005434, 0.12069809659440667, -2.4372512139611415, 2.732772001022027, 1.5589091425047412, -2.4802445685953426]
+    values = args.joint_values
+
+    #[-0.501997270431858, 0.765960214005434, 0.12069809659440667, -2.4372512139611415, 2.732772001022027, 1.5589091425047412, -2.4802445685953426]
 
     try:
         send_specific_joint_config = rospy.ServiceProxy("send_joint_config", JointConfig)

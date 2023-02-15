@@ -19,6 +19,8 @@
   <build_depend>message_generation</build_depend>
   <build_depend>elsa_perception</build_depend>
   <build_depend>elsa_perception_msgs</build_depend>
+  <build_depend>panda_moveit_config</build_depend>
+  
   
   <run_depend>message_runtime</run_depend>
   <run_depend>rospy</run_depend>
@@ -32,5 +34,6 @@
   <run_depend>franka_moveit</run_depend>
   <run_depend>panda_sim_moveit</run_depend>
   <run_depend>panda_gazebo</run_depend>
+  <run_depend>panda_moveit_config</run_depend>
 
 </package>

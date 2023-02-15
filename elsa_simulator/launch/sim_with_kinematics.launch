@@ -100,5 +100,6 @@
   </group> 
 
   <include file="$(find elsa_simulator)/launch/perception.launch"/>
+  <include file="$(find elsa_panda_controls)/launch/sim_move_group.launch"/>
 
 </launch>
