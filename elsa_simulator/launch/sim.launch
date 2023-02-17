@@ -106,6 +106,7 @@
   <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
   
   <!-- Perception node -->
+
   <include file="$(find elsa_simulator)/launch/perception.launch"/>
 
 </launch>
