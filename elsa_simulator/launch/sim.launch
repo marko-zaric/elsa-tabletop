@@ -81,7 +81,7 @@
   </group> 
 
 
-  <node pkg="elsa_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/>
+  <!-- <node pkg="elsa_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/> -->
   <include file="$(find elsa_simulator)/launch/perception.launch"/>
 
 </launch>

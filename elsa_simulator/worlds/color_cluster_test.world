@@ -26,23 +26,41 @@
     </include>
 
 
-
-
     <include>
-      <name>cube_large</name>
-      <uri>model://cube_7_5cm</uri>
+      <name>cube_red</name>
+      <uri>model://colored_large_cubes/cube_red</uri>
       <pose>0.4 -0.15 1.03 0 0 0</pose>
-      
     </include>
 
     <include>
-      <name>cube_large2</name>
-      <uri>model://cube_7_5cm_red</uri>
+      <name>cube_blue</name>
+      <uri>model://colored_large_cubes/cube_blue</uri>
       <pose>0.475 -0.15 1.03 0 0 0</pose>
     </include>
-    <gazebo reference="cube_large" material="Gazebo/Purple"/> 
 
+    <include>
+      <name>cube_indigo</name>
+      <uri>model://colored_large_cubes/cube_indigo</uri>
+      <pose>0.4 -0.075 1.03 0 0 0</pose>
+    </include>
 
+    <include>
+      <name>cube_pink</name>
+      <uri>model://colored_large_cubes/cube_pink</uri>
+      <pose>0.475 -0.075 1.03 0 0 0</pose>
+    </include>
+
+    <include>
+      <name>cube_turquoise</name>
+      <uri>model://colored_large_cubes/cube_turquoise</uri>
+      <pose>0.4 0.0 1.03 0 0 0</pose>
+    </include>
+
+    <include>
+      <name>cube_yellow</name>
+      <uri>model://colored_large_cubes/cube_yellow</uri>
+      <pose>0.475 0.0 1.03 0 0 0</pose>
+    </include>
 
     <physics type="ode">
       <real_time_update_rate>1000.0</real_time_update_rate>

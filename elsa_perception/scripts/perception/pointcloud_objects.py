@@ -29,6 +29,15 @@ MEAN_PANDA_FOOT = np.array([ 0.01781263, -0.46853645,  0.04416075])
 
 COLOR_SEGMENTATION = True
 
+
+def add_image_bounding_pixels(ax, min_point, max_point):
+    xyz = np.array([[min_point[0], min_point[1], max_point[2]]])
+    xyz = np.append(xyz, [[min_point[0], max_point[1], max_point[2]]], axis = 0)
+    xyz = np.append(xyz, [[max_point[0], min_point[1], max_point[2]]], axis = 0)
+    xyz = np.append(xyz, [[max_point[0], max_point[1], max_point[2]]], axis = 0)
+
+    ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2], s=0.0001)
+
 class PointCloudScene:
     def __init__(self, debug=False):
         self.objects_in_scene = []
@@ -76,6 +85,10 @@ class PointCloudScene:
             for i, rgb_ in zip(dbscan.labels_, hsv):
                 objects_color[i].append(rgb_)
 
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=20) 
+        plt.show()
 
         for i in range(len(benchmark)-1):
             print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
@@ -100,14 +113,15 @@ class PointCloudScene:
                 v_value = np.array(obj.hsv)[:,2]
                 h_x = np.sin(h_value)
                 h_y = np.cos(h_value)
-                h_circle = np.concatenate((xyz_object, np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #
-                cluster = DBSCAN(eps=0.8, min_samples=10) 
+                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #xyz_object, 
+                cluster = DBSCAN(eps=0.2, min_samples=8) 
                 cluster.fit(h_circle)
 
                 # print("colors detected: ", len(set(cluster.labels_)))
 
                 # If the clustering algorithm detects more than one object calculate certainty measure
                 list_of_labels = list(set(cluster.labels_))
+                print(len(set(cluster.labels_)))
                 if len(set(cluster.labels_)) > 1:
                     # Split the xyz values into objects according to color cluster
                     new_objs = [] 
@@ -129,24 +143,27 @@ class PointCloudScene:
                     combos = list(combinations(list_indices, 2))
                     color_seperated_objects = []
                     certainties = []
-                    fig = plt.figure()
-                    ax = fig.add_subplot(111, projection='3d')
-                    ax.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2],c = cluster.labels_, s=20) 
-                    plt.show()
-                    for i, j in combos:
-                        # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
-                        certainty = certainty_measure_color(new_objs[i], new_objs[j])
-                        certainties.append(certainty)
-                        if certainty > 0.8:
-                            color_seperated_objects.append(i)
-                            color_seperated_objects.append(j)
-                    print(certainties)
-                    if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
+                    for i in range(len(set(cluster.labels_))):
+                        fig = plt.figure()
+                        ax = fig.add_subplot(111, projection='3d')
+                        add_image_bounding_pixels(ax, np.array([-0.5, -0.5, 0]), np.array([0.5, 0.5, 0.5]))
+                        ax.scatter(np.array(new_objs[i])[:,0], np.array(new_objs[i])[:,1], np.array(new_objs[i])[:,2],c = colors.hsv_to_rgb(np.array(new_objs_colors[i])), s=20) 
+                        plt.show()
+                    exit()
+                    # for i, j in combos:
+                    #     # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
+                    #     certainty = certainty_measure_color(new_objs[i], new_objs[j])
+                    #     certainties.append(certainty)
+                    #     if certainty > 0.8:
+                    #         color_seperated_objects.append(i)
+                    #         color_seperated_objects.append(j)
+                    # print(certainties)
+                    # if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
                         
-                        # print("Poping: ", whole_obj_indx)
-                        self.objects_in_scene.pop(whole_obj_indx)
-                        for indx in color_seperated_objects:
-                            self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+                    #     # print("Poping: ", whole_obj_indx)
+                    #     self.objects_in_scene.pop(whole_obj_indx)
+                    #     for indx in color_seperated_objects:
+                    #         self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
             
 
     def create_bounding_boxes(self):
