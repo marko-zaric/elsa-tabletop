@@ -85,10 +85,10 @@ class PointCloudScene:
             for i, rgb_ in zip(dbscan.labels_, hsv):
                 objects_color[i].append(rgb_)
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=20) 
-        plt.show()
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=20) 
+        # plt.show()
 
         for i in range(len(benchmark)-1):
             print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
@@ -143,13 +143,13 @@ class PointCloudScene:
                     combos = list(combinations(list_indices, 2))
                     color_seperated_objects = []
                     certainties = []
-                    for i in range(len(set(cluster.labels_))):
-                        fig = plt.figure()
-                        ax = fig.add_subplot(111, projection='3d')
-                        add_image_bounding_pixels(ax, np.array([-0.5, -0.5, 0]), np.array([0.5, 0.5, 0.5]))
-                        ax.scatter(np.array(new_objs[i])[:,0], np.array(new_objs[i])[:,1], np.array(new_objs[i])[:,2],c = colors.hsv_to_rgb(np.array(new_objs_colors[i])), s=20) 
-                        plt.show()
-                    exit()
+                    # for i in range(len(set(cluster.labels_))):
+                    #     fig = plt.figure()
+                    #     ax = fig.add_subplot(111, projection='3d')
+                    #     add_image_bounding_pixels(ax, np.array([-0.5, -0.5, 0]), np.array([0.5, 0.5, 0.5]))
+                    #     ax.scatter(np.array(new_objs[i])[:,0], np.array(new_objs[i])[:,1], np.array(new_objs[i])[:,2],c = colors.hsv_to_rgb(np.array(new_objs_colors[i])), s=20) 
+                    #     plt.show()
+                    # exit()
                     # for i, j in combos:
                     #     # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
                     #     certainty = certainty_measure_color(new_objs[i], new_objs[j])
