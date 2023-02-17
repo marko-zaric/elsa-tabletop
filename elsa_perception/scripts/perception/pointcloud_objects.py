@@ -101,9 +101,9 @@ class PointCloudScene:
                 else:
                     self.objects_in_scene.append(PointCloudObject(object, objects_color[i]))
 
-
-        if hsv is not None and COLOR_SEGMENTATION == True:        
-            for whole_obj_indx, obj in enumerate(self.objects_in_scene):
+        if hsv is not None and COLOR_SEGMENTATION == True:
+            old_objects_in_scene = copy.copy(self.objects_in_scene)        
+            for whole_obj_indx, obj in enumerate(old_objects_in_scene):
                 # print("Object ", whole_obj_indx, ":")
                 xyz_object = normalize(np.array(obj.xyz_points)) 
 
@@ -111,6 +111,7 @@ class PointCloudScene:
                 h_value = np.array(obj.hsv)[:,0] * 2*np.pi
                 s_value = np.array(obj.hsv)[:,1]
                 v_value = np.array(obj.hsv)[:,2]
+                # np.save("/home/marko/saved_arrays/h_values_bad.npy", h_value)
                 h_x = np.sin(h_value)
                 h_y = np.cos(h_value)
                 h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #xyz_object, 
@@ -121,7 +122,7 @@ class PointCloudScene:
 
                 # If the clustering algorithm detects more than one object calculate certainty measure
                 list_of_labels = list(set(cluster.labels_))
-                print(len(set(cluster.labels_)))
+                print("Color clusters in object: ", len(set(cluster.labels_)))
                 if len(set(cluster.labels_)) > 1:
                     # Split the xyz values into objects according to color cluster
                     new_objs = [] 
@@ -142,14 +143,13 @@ class PointCloudScene:
                     list_indices = range(len(new_objs))
                     combos = list(combinations(list_indices, 2))
                     color_seperated_objects = []
-                    certainties = []
+                    # certainties = []
                     # for i in range(len(set(cluster.labels_))):
                     #     fig = plt.figure()
                     #     ax = fig.add_subplot(111, projection='3d')
                     #     add_image_bounding_pixels(ax, np.array([-0.5, -0.5, 0]), np.array([0.5, 0.5, 0.5]))
                     #     ax.scatter(np.array(new_objs[i])[:,0], np.array(new_objs[i])[:,1], np.array(new_objs[i])[:,2],c = colors.hsv_to_rgb(np.array(new_objs_colors[i])), s=20) 
                     #     plt.show()
-                    # exit()
                     # for i, j in combos:
                     #     # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
                     #     certainty = certainty_measure_color(new_objs[i], new_objs[j])
@@ -159,11 +159,19 @@ class PointCloudScene:
                     #         color_seperated_objects.append(j)
                     # print(certainties)
                     # if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
-                        
-                    #     # print("Poping: ", whole_obj_indx)
-                    #     self.objects_in_scene.pop(whole_obj_indx)
-                    #     for indx in color_seperated_objects:
-                    #         self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+                    
+                    self.objects_in_scene.pop(whole_obj_indx)
+                    for indx in range(len(set(cluster.labels_))):
+                        self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+        # self.create_bounding_boxes()
+        fig = plt.figure()
+        axis = fig.add_subplot(111, projection='3d')
+        add_image_bounding_pixels(axis, np.array([-0.5, -0.5, 0]), np.array([0.5, 0.5, 0.5]))
+        for obj in self.objects_in_scene:
+            # obj.plot_bounding_box(axis)
+            axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2])
+        plt.show()
+        exit()
             
 
     def create_bounding_boxes(self):
@@ -188,7 +196,6 @@ class PointCloudScene:
         print("Computing Surface features ...")
         # --- Surface Features ---
         for i in range(len(self.objects_in_scene)):
-            print(i)
             self.objects_in_scene[i].compute_surface_normals()
 
     def create_physical_scene_msg(self):
@@ -229,6 +236,17 @@ class PointCloudScene:
             else:
                 ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=10)
             plt.legend() 
+
+    def plot_all_clustered_objects(self, ax=None):
+        axis = None
+        if ax is None:
+            fig = plt.figure()
+            axis = fig.add_subplot(111, projection='3d')
+        else:
+            axis = ax
+        for obj in self.objects_in_scene:
+            axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=0.05)
+
 
 
 
