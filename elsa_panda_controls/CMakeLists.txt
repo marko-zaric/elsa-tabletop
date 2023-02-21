@@ -7,12 +7,12 @@ find_package(catkin REQUIRED COMPONENTS
     franka_core_msgs
     gazebo_msgs
     franka_moveit
-    panda_sim_moveit
     panda_gazebo
     elsa_perception
     std_msgs
     message_generation
     genmsg
+    panda_moveit_config
 )
 
 # find_package (OpenCV 4.0.0 REQUIRED)
@@ -31,6 +31,7 @@ add_message_files(
 add_service_files(
   FILES
   JointConfig.srv
+  GoalPoseJointSpace.srv
 )
 
 generate_messages(
@@ -49,9 +50,9 @@ catkin_package(
     franka_core_msgs
     gazebo_msgs
     franka_moveit
-    panda_sim_moveit
     panda_gazebo
     elsa_perception
+    panda_moveit_config
 )
 
 catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py 
@@ -70,6 +71,8 @@ catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py
                       scripts/node_gazebo_pass_gesture.py
                       scripts/node_gazebo_point_gesture.py
                       scripts/node_gazebo_grabby_motion.py
+                      scripts/node_moveit_inverse_kinematics.py
+                      scripts/node_ik_client_demo.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ###########

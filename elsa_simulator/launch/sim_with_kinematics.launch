@@ -99,13 +99,7 @@
       <node pkg="elsa_simulator" type="force_neutral_pose.py" name="startup_script"/>
   </group> 
 
-  <!-- IK conversion -->
-  <node pkg="elsa_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/>
-
-  <!-- Object database -->
-  <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
-  
-  <!-- Perception node -->
   <include file="$(find elsa_simulator)/launch/perception.launch"/>
+  <include file="$(find elsa_panda_controls)/launch/sim_move_group.launch"/>
 
 </launch>

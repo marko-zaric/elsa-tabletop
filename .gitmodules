@@ -1,6 +1,6 @@
 [submodule "franka_ros"]
 	path = franka_ros
-	url = https://github.com/justagist/franka_ros.git
+	url = https://github.com/frankaemika/franka_ros.git
 [submodule "franka_ros_interface"]
 	path = franka_ros_interface
 	url = https://github.com/justagist/franka_ros_interface.git
