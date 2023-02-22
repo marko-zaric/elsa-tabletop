@@ -81,12 +81,15 @@ def listener():
             SCENE_stamped.header = std_msgs.msg.Header()
             SCENE_stamped.header.stamp = rospy.Time.now()
             SCENE_stamped.header.seq = seq_number
+            SCENE_stamped.header.frame_id = 'base'
+            #SCENE_stamped.header.frame_id = 'camera_base'
             
             FULLSCENE_stamped = FullSceneStamped()
             FULLSCENE_stamped.physical_scene = SCENE.physical_scene
             FULLSCENE_stamped.header = std_msgs.msg.Header()
             FULLSCENE_stamped.header.stamp = SCENE_stamped.header.stamp
             FULLSCENE_stamped.header.seq = SCENE_stamped.header.seq
+            FULLSCENE_stamped.header.frame_id = SCENE_stamped.header.frame_id
             FULLSCENE_stamped.social_features.append(SocialFeatures(person_identity = "PlaceHolderHuman"))
 
             pub.publish(SCENE)
