@@ -111,6 +111,7 @@ catkin_install_python(PROGRAMS
                       scripts/test_point_cloud.py
                       scripts/test_bounding_boxes.py
                       scripts/test_surface_normals.py
+                      scripts/node_read_camera.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark executables for installation
