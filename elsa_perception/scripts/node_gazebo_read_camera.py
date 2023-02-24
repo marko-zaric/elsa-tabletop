@@ -9,7 +9,6 @@ import struct
 import numpy as np
 from elsa_perception_msgs.msg import PhysicalScene, ClusteredPointcloud
 from matplotlib import colors
-import matplotlib.pyplot as plt
 
 SCENE = None
 DATA_CALLBACK = None
