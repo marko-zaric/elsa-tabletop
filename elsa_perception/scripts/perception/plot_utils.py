@@ -1,5 +1,7 @@
 import numpy as np
 import time
+
+
 def plane_removal(xyz, rgb, tol):
     xyz_planeless = []
     rgb_planeless = []

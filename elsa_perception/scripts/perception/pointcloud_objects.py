@@ -3,7 +3,7 @@ from scipy.spatial import ConvexHull,Delaunay
 from matplotlib.path import Path
 import matplotlib.pyplot as plt
 import time
-from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
+from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 from elsa_perception_msgs.srv import SurfaceFeatures
 from elsa_object_database.srv import RegisteredObjects
@@ -15,6 +15,7 @@ import std_msgs.msg as std_msgs
 from matplotlib import colors
 import copy
 from itertools import combinations
+from perception.real_world_preprocessing import remove_plane
 
 '''
 This class describes an object according to the paper Learning Social Affordances and Using Them for Planning 
@@ -30,7 +31,6 @@ The properties are divided into surface and spatial features.
 MEAN_PANDA_FOOT = np.array([ 0.01781263, -0.46853645,  0.04416075])
 
 COLOR_SEGMENTATION = True
-
 
 def add_image_bounding_pixels(ax, min_point, max_point):
     xyz = np.array([[min_point[0], min_point[1], max_point[2]]])
@@ -48,22 +48,32 @@ class PointCloudScene:
         self.dbscan_labels = None
         self.DEBUG = debug
         self.bounding_boxes = []
-
+        
         self.registered_objs = []
         self.registered_objs_values = np.empty((2,))
         self.registered_obj_client()        
+
+        if debug is False:
+            self.color_eps = 0.075
+        else:
+            self.color_eps = 0.2
+
     
     def detect_objects(self, xyz, hsv=None):
         self.hsv = hsv
-        #xyz, rgb = plane_removal(xyz, rgb, 10**-2)
+
         print("Detecting Objects...")
         benchmark = []
         benchmark.append(time.time())
         self.xyz = xyz
         if self.DEBUG == False: 
-            self.xyz[:,2] = 1.001 - xyz[:,2]
+            self.xyz[:,2] = 0.946 - xyz[:,2]
             self.xyz[:,0] = xyz[:,0]
             self.xyz[:,1] = - xyz[:,1]
+
+            self.xyz, self.hsv = remove_plane(self.xyz, hsv, 0.01)
+
+
         benchmark.append(time.time())
 
         dbscan = DBSCAN(eps=0.022, min_samples=6) 
@@ -88,7 +98,7 @@ class PointCloudScene:
             for i in range(len(labels_set)):
                 objects_color.append([])
 
-            for i, rgb_ in zip(dbscan.labels_, hsv):
+            for i, rgb_ in zip(dbscan.labels_, self.hsv):
                 objects_color[i].append(rgb_)
 
         # fig = plt.figure()
@@ -99,14 +109,14 @@ class PointCloudScene:
         for i in range(len(benchmark)-1):
             print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
-        for i, object in enumerate(objects):
+        for i, obj in enumerate(objects):
             # Checks if panda foot is still in the scene or not
-            if np.linalg.norm(np.array(object).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
-                if hsv is None:
-                    self.objects_in_scene.append(PointCloudObject(object))
-                else:
-                    self.objects_in_scene.append(PointCloudObject(object, objects_color[i]))
-
+            if np.linalg.norm(np.array(obj).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
+                if len(obj) > 10:
+                    if hsv is None:
+                        self.objects_in_scene.append(PointCloudObject(obj))
+                    else:
+                        self.objects_in_scene.append(PointCloudObject(obj, objects_color[i]))
         if hsv is not None and COLOR_SEGMENTATION == True:
             old_objects_in_scene = copy.copy(self.objects_in_scene)        
             for whole_obj_indx, obj in enumerate(old_objects_in_scene):
@@ -120,16 +130,17 @@ class PointCloudScene:
                 # np.save("/home/marko/saved_arrays/h_values_bad.npy", h_value)
                 h_x = np.sin(h_value)
                 h_y = np.cos(h_value)
-                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #xyz_object, 
-                cluster = DBSCAN(eps=0.2, min_samples=8) 
+                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #, xyz_object/20)
+                cluster = DBSCAN(eps=self.color_eps, min_samples=8) 
                 cluster.fit(h_circle)
 
                 # print("colors detected: ", len(set(cluster.labels_)))
 
                 # If the clustering algorithm detects more than one object calculate certainty measure
                 list_of_labels = list(set(cluster.labels_))
-                print("Color clusters in object: ", len(set(cluster.labels_)))
-                if len(set(cluster.labels_)) > 1:
+                colors_detected = len(set(cluster.labels_))
+                print("Color clusters in object: ", colors_detected)
+                if colors_detected > 1:
                     # Split the xyz values into objects according to color cluster
                     new_objs = [] 
                     new_objs_colors = []
@@ -139,45 +150,66 @@ class PointCloudScene:
                     for i, xyz_, hsv_ in zip(cluster.labels_, obj.xyz_points, obj.hsv):
                         new_objs[list_of_labels.index(i)].append([xyz_[0], xyz_[1], xyz_[2]])
                         new_objs_colors[list_of_labels.index(i)].append([hsv_[0], hsv_[1], hsv_[2]])
-                    # Loop trough objects and calculate certainty measure
-                    '''
-                    The certainty measure is calculated by how much of one object is found in the other:
-                    1.) calculate the convex hull of all the objects 
-                    2.) check objects pairwise of how many points of each object are in the other one
-                    3.) calculate the ratio of object points to foreign points -> certainty measure
-                    '''
-                    list_indices = range(len(new_objs))
-                    combos = list(combinations(list_indices, 2))
-                    color_seperated_objects = []
-                    # certainties = []
-                    # for i in range(len(set(cluster.labels_))):
-                    #     fig = plt.figure()
-                    #     ax = fig.add_subplot(111, projection='3d')
-                    #     add_image_bounding_pixels(ax, np.array([-0.5, -0.5, 0]), np.array([0.5, 0.5, 0.5]))
-                    #     ax.scatter(np.array(new_objs[i])[:,0], np.array(new_objs[i])[:,1], np.array(new_objs[i])[:,2],c = colors.hsv_to_rgb(np.array(new_objs_colors[i])), s=20) 
-                    #     plt.show()
-                    # for i, j in combos:
-                    #     # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
-                    #     certainty = certainty_measure_color(new_objs[i], new_objs[j])
-                    #     certainties.append(certainty)
-                    #     if certainty > 0.8:
-                    #         color_seperated_objects.append(i)
-                    #         color_seperated_objects.append(j)
-                    # print(certainties)
-                    # if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
-                    
+                   
+                   
+                    # list_indices = range(len(new_objs))
+                    # combos = list(combinations(list_indices, 2))
+                
+                  
                     self.objects_in_scene.pop(whole_obj_indx)
+                    new_objs_copy = new_objs.copy()
+                    list_of_small_objs = []
                     for indx in range(len(set(cluster.labels_))):
+                        if len(new_objs_copy[indx]) < 30:
+                            list_of_small_objs.append(indx)
+
+                    list_of_small_objs.reverse()
+                    print("Small objects: ", list_of_small_objs)
+                    for i in list_of_small_objs:
+                        new_objs.pop(i)
+                        new_objs_colors.pop(i)
+                    
+
+                    for indx in range(len(new_objs)):
+                        ob_array = np.array(new_objs[indx])
+                        q75_x,q25_x = np.percentile(ob_array[:,0],[75,25])
+                        q75_y,q25_y = np.percentile(ob_array[:,1],[75,25])
+                        q75_z,q25_z = np.percentile(ob_array[:,2],[75,25])
+                        intr_qr_x = q75_x-q25_x
+                        max_x = q75_x+(1.5*intr_qr_x)
+                        min_x = q25_x-(1.5*intr_qr_x)
+                        intr_qr_y = q75_y-q25_y
+                        max_y = q75_y+(1.5*intr_qr_y)
+                        min_y = q25_y-(1.5*intr_qr_y)
+                        intr_qr_z = q75_x-q25_x
+                        max_z = q75_z+(1.5*intr_qr_z)
+                        min_z = q25_z-(1.5*intr_qr_z)
+                        
+                        for i_pt in range(len(new_objs[indx])-1,-1,-1):
+                            pt = new_objs[indx][i_pt]
+                            if min_x > pt[0] or max_x < pt[0]: 
+                                new_objs[indx].pop(i_pt)
+                                new_objs_colors[indx].pop(i_pt)
+                            elif min_y > pt[1] or max_y < pt[1]:
+                                new_objs[indx].pop(i_pt)
+                                new_objs_colors[indx].pop(i_pt)
+                            elif min_z > pt[2] or max_z < pt[2]:
+                                new_objs[indx].pop(i_pt)
+                                new_objs_colors[indx].pop(i_pt)
+
                         self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+        
         # self.create_bounding_boxes()
-        fig = plt.figure()
-        axis = fig.add_subplot(111, projection='3d')
-        add_image_bounding_pixels(axis, np.array([-0.5, -0.5, 0]), np.array([0.5, 0.5, 0.5]))
-        for obj in self.objects_in_scene:
-            # obj.plot_bounding_box(axis)
-            axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2])
-        plt.show()
-        exit()
+        # for obj in self.objects_in_scene:
+        #     print(len(obj.xyz_points))
+        #     print(len(obj.hsv))
+        #     fig = plt.figure()
+        #     axis = fig.add_subplot(111, projection='3d')
+        #     add_image_bounding_pixels(axis, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.3]))
+        #     axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=10,c = colors.hsv_to_rgb(obj.hsv))
+        #     obj.plot_bounding_box(axis)
+        #     plt.show()
+   
             
 
     def create_bounding_boxes(self):
@@ -260,7 +292,10 @@ class PointCloudScene:
             if self.hsv is None:
                 ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=0.01)
             else:
+                # ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2], s=1) #,c = self.dbscan_labels
                 ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=10)
+            add_image_bounding_pixels(ax, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.2]))
+                
             plt.legend() 
 
     def plot_all_clustered_objects(self, ax=None):
@@ -659,10 +694,12 @@ def in_hull(test_points, hull_object):
     return np.all(np.asarray(test_points) @ A.T + b.T < eps, axis=1)
 
 
-
-def loss_function(x):
-    return (1-np.exp(-x * 1000))
-
+'''
+The certainty measure is calculated by how much of one object is found in the other:
+1.) calculate the convex hull of all the objects 
+2.) check objects pairwise of how many points of each object are in the other one
+3.) calculate the ratio of object points to foreign points -> certainty measure
+'''
 def certainty_measure_color(obj1, obj2):
     if len(obj1) >= 5 and len(obj2) >= 5:
         unique, counts = np.unique(in_hull(obj2, obj1), return_counts=True)
@@ -681,4 +718,5 @@ def certainty_measure_color(obj1, obj2):
     else:
         return 0
     
-    
+def loss_function(x):
+    return (1-np.exp(-x * 1000))

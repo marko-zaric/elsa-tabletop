@@ -5,7 +5,7 @@
     <arg name="filters" value="pointcloud" />
   </include>
 
-  
+  <node pkg="elsa_perception" type="surface_feature_service" name="surface_feature_service"/>
 
   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
 
@@ -13,12 +13,12 @@
     <remap from="~input" to="/camera/depth/color/points" /> 
     <!-- /camera/depth_registered/points -->
     <rosparam>
-      leaf_size: 0.01
+      leaf_size: 0.005
     </rosparam>
   </node>
 
 
-  <!-- <node name="read_cam" pkg="elsa_perception" type="node_read_camera.py" output="screen"/> -->
+  <node name="read_cam" pkg="elsa_perception" type="node_read_camera.py" output="screen"/>
   
   
 
