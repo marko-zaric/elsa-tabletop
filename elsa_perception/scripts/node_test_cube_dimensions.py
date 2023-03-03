@@ -66,7 +66,7 @@ def listener():
                     color[count_points, :3] = [r, g, b]
 
             count_points += 1
-        # print(count_points)
+        print(count_points)
         if SAVE_POINT_CLOUD:
             np.save("/home/marko/IIS/point_clouds/xyz_real_"+ str(counter) +".npy", xyz)
             if ENABLE_COLOR:
@@ -81,10 +81,12 @@ def listener():
         if not (xyz.shape == (0,3) or color.shape == (0,3)):
             PC.detect_objects(xyz, color)
             PC.create_bounding_boxes()
-            # fig = plt.figure()
-            # axis = fig.add_subplot(111, projection='3d')
-            # PC.plot_scene(axis)
-            # plt.show()
+            for i, single_object in enumerate(PC.objects_in_scene):
+                print("Relative size error obj "+ str(i) + ": ", (np.array(single_object.size())-0.052) / 0.052)
+            fig = plt.figure()
+            axis = fig.add_subplot(111, projection='3d')
+            PC.plot_scene(axis)
+            plt.show()
             PC.calculate_surface_features()
             SCENE = PC.create_physical_scene_msg()
             pub.publish(SCENE) 

@@ -4,7 +4,7 @@ from sklearn.cluster import DBSCAN
 from pointcloud_objects import PointCloudObject, PointCloudScene
 import time
 from bounding_box import *
-from plane_removal import *
+from elsa_perception.scripts.perception.plot_utils import *
 
 
 def pointcloudBB(xyz, rgb=None, ax = None):
