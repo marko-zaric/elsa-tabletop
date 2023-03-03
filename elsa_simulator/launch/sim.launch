@@ -55,7 +55,7 @@
 
   <!-- We resume the logic in empty_world.launch, changing the name of the world to be launched -->
   <include if="$(arg load_gazebo)" file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find elsa_simulator)/worlds/panda.world"/>
+    <arg name="world_name" value="$(find elsa_simulator)/worlds/color_cluster_test.world"/>
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="$(arg paused)"/>
@@ -106,6 +106,7 @@
   <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
   
   <!-- Perception node -->
+
   <include file="$(find elsa_simulator)/launch/perception.launch"/>
 
 </launch>

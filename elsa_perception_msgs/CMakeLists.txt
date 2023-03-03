@@ -27,6 +27,7 @@ add_message_files(
   PhysicalSceneStamped.msg
   SocialFeatures.msg
   FullSceneStamped.msg
+  ClusteredPointcloud.msg
 )
 
 ## Generate services in the 'srv' folder

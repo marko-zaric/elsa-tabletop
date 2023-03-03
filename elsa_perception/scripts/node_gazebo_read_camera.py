@@ -7,9 +7,10 @@ import sensor_msgs.point_cloud2 as pc2
 import ctypes
 import struct
 import numpy as np
-from elsa_perception_msgs.msg import PhysicalScene, PhysicalSceneStamped, FullSceneStamped, SocialFeatures
+from elsa_perception_msgs.msg import PhysicalScene, PhysicalSceneStamped, FullSceneStamped, SocialFeatures, ClusteredPointcloud
 from matplotlib import colors
 import std_msgs.msg
+
 
 SCENE = None
 DATA_CALLBACK = None
@@ -25,10 +26,13 @@ def callback(data):
 def listener():
     rospy.init_node("read_cam_data", anonymous=True)
     rospy.Subscriber("/downsample/output", PointCloud2, callback=callback)
+
     pub = rospy.Publisher('/scene_description', PhysicalScene, queue_size=1)
     scene_stamped_pub = rospy.Publisher('/scene_description_stamped', PhysicalSceneStamped, queue_size=1)
     fullscene_stamped_pub = rospy.Publisher('/fullscene', FullSceneStamped, queue_size=1)
     seq_number = 0
+    pub_cluster = rospy.Publisher('elsa_perception/clustered_pointcloud', ClusteredPointcloud , queue_size=1)
+
     while not rospy.is_shutdown():
         rospy.wait_for_message("/downsample/output", PointCloud2)
         gen = pc2.read_points(DATA_CALLBACK, skip_nans=True, field_names=("x", "y", "z", "rgb"))
@@ -96,6 +100,11 @@ def listener():
             scene_stamped_pub.publish(SCENE_stamped)
             fullscene_stamped_pub.publish(FULLSCENE_stamped)
             seq_number += 1
+
+            POINTCLOUD_CLUSTER = PC.create_clustered_pointcloud_msg()
+            # print(POINTCLOUD_CLUSTER.cluster_label)
+            pub_cluster.publish(POINTCLOUD_CLUSTER)
+
     
 
 if __name__ == '__main__':

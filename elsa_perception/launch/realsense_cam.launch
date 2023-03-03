@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
+
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">  
+    <arg name="filters" value="pointcloud" />
+  </include>
+
   <node pkg="elsa_perception" type="surface_feature_service" name="surface_feature_service"/>
 
   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
 
   <node pkg="nodelet" type="nodelet" name="downsample" args="load pcl/VoxelGrid pcl_manager" output="screen">
-    <remap from="~input" to="/camera/depth/color/points" />
+    <remap from="~input" to="/camera/depth/color/points" /> 
+    <!-- /camera/depth_registered/points -->
     <rosparam>
-      leaf_size: 0.005 
-      <!-- leaf_size: 0.01  -->
-
+      leaf_size: 0.005
     </rosparam>
   </node>
 
-  <!-- <node pkg="elsa_perception" type="node_gazebo_read_camera.py" name="read_cam_data" /> -->
+
+  <node name="read_cam" pkg="elsa_perception" type="node_read_camera.py" output="screen"/>
   
+  
+
 </launch>

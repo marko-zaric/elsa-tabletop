@@ -1,18 +1,20 @@
 import numpy as np
 from scipy.spatial import ConvexHull,Delaunay
+from matplotlib.path import Path
 import matplotlib.pyplot as plt
 import time
-from sklearn.cluster import DBSCAN, OPTICS, MeanShift, estimate_bandwidth
+from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 from elsa_perception_msgs.srv import SurfaceFeatures
-from elsa_perception_msgs.msg import Feature, FeatureVector, SurfaceFeaturesMsg, PhysicalFeatures, BoundingBox, PhysicalScene 
 from elsa_object_database.srv import RegisteredObjects
+from elsa_perception_msgs.msg import PhysicalScene, PhysicalFeatures, BoundingBox, SurfaceFeaturesMsg, ClusteredPointcloud
 import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
 from matplotlib import colors
 import copy
 from itertools import combinations
+from perception.real_world_preprocessing import remove_plane
 
 '''
 This class describes an object according to the paper Learning Social Affordances and Using Them for Planning 
@@ -29,6 +31,14 @@ MEAN_PANDA_FOOT = np.array([ 0.01781263, -0.46853645,  0.04416075])
 
 COLOR_SEGMENTATION = True
 
+def add_image_bounding_pixels(ax, min_point, max_point):
+    xyz = np.array([[min_point[0], min_point[1], max_point[2]]])
+    xyz = np.append(xyz, [[min_point[0], max_point[1], max_point[2]]], axis = 0)
+    xyz = np.append(xyz, [[max_point[0], min_point[1], max_point[2]]], axis = 0)
+    xyz = np.append(xyz, [[max_point[0], max_point[1], max_point[2]]], axis = 0)
+
+    ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2], s=0.0001)
+
 class PointCloudScene:
     def __init__(self, debug=False):
         self.objects_in_scene = []
@@ -41,18 +51,28 @@ class PointCloudScene:
         self.registered_objs = []
         self.registered_objs_values = np.empty((2,))
         self.registered_obj_client()        
+
+        if debug is False:
+            self.color_eps = 0.075
+        else:
+            self.color_eps = 0.2
+
     
     def detect_objects(self, xyz, hsv=None):
         self.hsv = hsv
-        #xyz, rgb = plane_removal(xyz, rgb, 10**-2)
+
         print("Detecting Objects...")
         benchmark = []
         benchmark.append(time.time())
         self.xyz = xyz
         if self.DEBUG == False: 
-            self.xyz[:,2] = 1.001 - xyz[:,2]
+            self.xyz[:,2] = 0.946 - xyz[:,2]
             self.xyz[:,0] = xyz[:,0]
             self.xyz[:,1] = - xyz[:,1]
+
+            self.xyz, self.hsv = remove_plane(self.xyz, hsv, 0.01)
+
+
         benchmark.append(time.time())
 
         dbscan = DBSCAN(eps=0.022, min_samples=6) 
@@ -77,41 +97,49 @@ class PointCloudScene:
             for i in range(len(labels_set)):
                 objects_color.append([])
 
-            for i, rgb_ in zip(dbscan.labels_, hsv):
+            for i, rgb_ in zip(dbscan.labels_, self.hsv):
                 objects_color[i].append(rgb_)
 
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=20) 
+        # plt.show()
 
         for i in range(len(benchmark)-1):
             print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
-        for i, object in enumerate(objects):
+        for i, obj in enumerate(objects):
             # Checks if panda foot is still in the scene or not
-            if np.linalg.norm(np.array(object).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
-                if hsv is None:
-                    self.objects_in_scene.append(PointCloudObject(object))
-                else:
-                    self.objects_in_scene.append(PointCloudObject(object, objects_color[i]))
-
-
-        if hsv is not None and COLOR_SEGMENTATION == True:        
-            for whole_obj_indx, obj in enumerate(self.objects_in_scene):
+            if np.linalg.norm(np.array(obj).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
+                if len(obj) > 10:
+                    if hsv is None:
+                        self.objects_in_scene.append(PointCloudObject(obj))
+                    else:
+                        self.objects_in_scene.append(PointCloudObject(obj, objects_color[i]))
+        if hsv is not None and COLOR_SEGMENTATION == True:
+            old_objects_in_scene = copy.copy(self.objects_in_scene)        
+            for whole_obj_indx, obj in enumerate(old_objects_in_scene):
                 # print("Object ", whole_obj_indx, ":")
-                # xyz_object = np.array(obj.xyz_points)
+                xyz_object = normalize(np.array(obj.xyz_points)) 
 
                 # Parametrize h value to circle in for cyclical clustering
                 h_value = np.array(obj.hsv)[:,0] * 2*np.pi
+                s_value = np.array(obj.hsv)[:,1]
+                v_value = np.array(obj.hsv)[:,2]
+                # np.save("/home/marko/saved_arrays/h_values_bad.npy", h_value)
                 h_x = np.sin(h_value)
                 h_y = np.cos(h_value)
-                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T,np.atleast_2d(h_x).T, np.atleast_2d(h_x).T), axis=1)
-                
-                cluster = DBSCAN(eps=0.9, min_samples=10) 
+                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #, xyz_object/20)
+                cluster = DBSCAN(eps=self.color_eps, min_samples=8) 
                 cluster.fit(h_circle)
 
                 # print("colors detected: ", len(set(cluster.labels_)))
 
                 # If the clustering algorithm detects more than one object calculate certainty measure
                 list_of_labels = list(set(cluster.labels_))
-                if len(set(cluster.labels_)) > 1:
+                colors_detected = len(set(cluster.labels_))
+                print("Color clusters in object: ", colors_detected)
+                if colors_detected > 1:
                     # Split the xyz values into objects according to color cluster
                     new_objs = [] 
                     new_objs_colors = []
@@ -121,31 +149,66 @@ class PointCloudScene:
                     for i, xyz_, hsv_ in zip(cluster.labels_, obj.xyz_points, obj.hsv):
                         new_objs[list_of_labels.index(i)].append([xyz_[0], xyz_[1], xyz_[2]])
                         new_objs_colors[list_of_labels.index(i)].append([hsv_[0], hsv_[1], hsv_[2]])
-                    # Loop trough objects and calculate certainty measure
-                    '''
-                    The certainty measure is calculated by how much of one object is found in the other:
-                    1.) calculate the convex hull of all the objects 
-                    2.) check objects pairwise of how many points of each object are in the other one
-                    3.) calculate the ratio of object points to foreign points -> certainty measure
-                    '''
-                    list_indices = range(len(new_objs))
-                    combos = list(combinations(list_indices, 2))
-                    color_seperated_objects = []
-                    certainties = []
-                    for i, j in combos:
-                        # print("Object certainty: ", certainty_measure_color(new_objs[i], new_objs[j]))
-                        certainty = certainty_measure_color(new_objs[i], new_objs[j])
-                        certainties.append(certainty)
-                        if certainty > 0.8:
-                            color_seperated_objects.append(i)
-                            color_seperated_objects.append(j)
-                    # print(all(c > 0.8 for c in certainties))
-                    if len(color_seperated_objects) == len(list_indices) and all(c > 0.8 for c in certainties) :
-                        # print("Poping: ", whole_obj_indx)
-                        self.objects_in_scene.pop(whole_obj_indx)
-                        for indx in color_seperated_objects:
-                            self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+                   
+                   
+                    # list_indices = range(len(new_objs))
+                    # combos = list(combinations(list_indices, 2))
+                
+                  
+                    self.objects_in_scene.pop(whole_obj_indx)
+                    new_objs_copy = new_objs.copy()
+                    list_of_small_objs = []
+                    for indx in range(len(set(cluster.labels_))):
+                        if len(new_objs_copy[indx]) < 30:
+                            list_of_small_objs.append(indx)
 
+                    list_of_small_objs.reverse()
+                    print("Small objects: ", list_of_small_objs)
+                    for i in list_of_small_objs:
+                        new_objs.pop(i)
+                        new_objs_colors.pop(i)
+                    
+
+                    for indx in range(len(new_objs)):
+                        ob_array = np.array(new_objs[indx])
+                        q75_x,q25_x = np.percentile(ob_array[:,0],[75,25])
+                        q75_y,q25_y = np.percentile(ob_array[:,1],[75,25])
+                        q75_z,q25_z = np.percentile(ob_array[:,2],[75,25])
+                        intr_qr_x = q75_x-q25_x
+                        max_x = q75_x+(1.5*intr_qr_x)
+                        min_x = q25_x-(1.5*intr_qr_x)
+                        intr_qr_y = q75_y-q25_y
+                        max_y = q75_y+(1.5*intr_qr_y)
+                        min_y = q25_y-(1.5*intr_qr_y)
+                        intr_qr_z = q75_x-q25_x
+                        max_z = q75_z+(1.5*intr_qr_z)
+                        min_z = q25_z-(1.5*intr_qr_z)
+                        
+                        for i_pt in range(len(new_objs[indx])-1,-1,-1):
+                            pt = new_objs[indx][i_pt]
+                            if min_x > pt[0] or max_x < pt[0]: 
+                                new_objs[indx].pop(i_pt)
+                                new_objs_colors[indx].pop(i_pt)
+                            elif min_y > pt[1] or max_y < pt[1]:
+                                new_objs[indx].pop(i_pt)
+                                new_objs_colors[indx].pop(i_pt)
+                            elif min_z > pt[2] or max_z < pt[2]:
+                                new_objs[indx].pop(i_pt)
+                                new_objs_colors[indx].pop(i_pt)
+
+                        self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+        
+        # self.create_bounding_boxes()
+        # for obj in self.objects_in_scene:
+        #     print(len(obj.xyz_points))
+        #     print(len(obj.hsv))
+        #     fig = plt.figure()
+        #     axis = fig.add_subplot(111, projection='3d')
+        #     add_image_bounding_pixels(axis, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.3]))
+        #     axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=10,c = colors.hsv_to_rgb(obj.hsv))
+        #     obj.plot_bounding_box(axis)
+        #     plt.show()
+   
             
 
     def create_bounding_boxes(self):
@@ -170,7 +233,6 @@ class PointCloudScene:
         print("Computing Surface features ...")
         # --- Surface Features ---
         for i in range(len(self.objects_in_scene)):
-            print(i)
             self.objects_in_scene[i].compute_surface_normals()
 
     def create_physical_scene_msg(self):
@@ -180,7 +242,7 @@ class PointCloudScene:
         for obj in self.objects_in_scene:
             list_physical_features.append(obj.create_physical_features_msg(self.registered_objs, self.registered_objs_values))
 
-        physical_scene = PhysicalScene(list_physical_features)
+        physical_scene = PhysicalScene(physical_scene=list_physical_features, number_of_objects=len(self.objects_in_scene))
 
         return physical_scene
 
@@ -202,6 +264,24 @@ class PointCloudScene:
         except rospy.ServiceException as e:
             print("Registered Objects Service failed %s", e)
 
+
+    def create_clustered_pointcloud_msg(self):
+        points_with_label = np.empty((4,), dtype=np.float32)
+        for i, obj in enumerate(self.objects_in_scene):
+            points = obj.xyz_points
+            print("Object ", i)
+            print("Num Points: ", len(points))
+            # fig = plt.figure()
+            # ax = fig.add_subplot(111, projection='3d')
+            # ax.scatter(points[:,0], points[:,1], points[:,2],c = colors.hsv_to_rgb(obj.hsv), s=20)
+            # plt.show()
+            object_pts = np.array(points)
+            object_pts = np.hstack((object_pts, np.atleast_2d(np.ones(len(points))*i).T))
+            points_with_label = np.vstack((points_with_label, object_pts))
+        points_with_label = points_with_label.T
+        CLUSTERED_PC = ClusteredPointcloud(x=points_with_label[0].tolist(), y=points_with_label[1].tolist(), z=points_with_label[2].tolist(), cluster_label=points_with_label[3].tolist())
+        return CLUSTERED_PC
+
     def plot_scene(self, ax=None):
         for obj in self.objects_in_scene:
             if ax != None:
@@ -210,8 +290,22 @@ class PointCloudScene:
             if self.hsv is None:
                 ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = self.dbscan_labels, s=0.01)
             else:
+                # ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2], s=1) #,c = self.dbscan_labels
                 ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=10)
+            add_image_bounding_pixels(ax, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.2]))
+                
             plt.legend() 
+
+    def plot_all_clustered_objects(self, ax=None):
+        axis = None
+        if ax is None:
+            fig = plt.figure()
+            axis = fig.add_subplot(111, projection='3d')
+        else:
+            axis = ax
+        for obj in self.objects_in_scene:
+            axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=0.05)
+
 
 
 
@@ -455,6 +549,7 @@ class PointCloudObject:
             x = np.cos(np.pi*2*hsv_mean[0])
             y = np.sin(np.pi*2*hsv_mean[0])
 
+
             total = np.abs(registered_obj_values - np.array([[x,y]]))
             label_index = np.sum(total,axis=1).argmin()
 
@@ -567,38 +662,58 @@ class PointCloudObject:
         self.T = T
 
 
-def in_hull(p, hull):
-    """
-    Test if points in `p` are in `hull`
+# def in_hull(p, hull):
+#     """
+#     Test if points in `p` are in `hull`
 
-    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
-    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
-    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
-    will be computed
-    """
-    if not isinstance(hull,Delaunay):
-        hull = Delaunay(hull)
+#     `p` should be a `NxK` coordinates of `N` points in `K` dimensions
+#     `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
+#     coordinates of `M` points in `K`dimensions for which Delaunay triangulation
+#     will be computed
+#     """
+#     if not isinstance(hull,Delaunay):
+#         hull = Delaunay(hull)
 
-    return hull.find_simplex(p)>=0
+#     return hull.find_simplex(p)>=0
 
-def loss_function(x):
-    return (1-np.exp(-x * 1000))
+def in_hull(test_points, hull_object):
+    # Assume points are shape (n, d), and that hull has f facets.
+    hull = ConvexHull(hull_object)
+    print("Volume ", hull.volume)
+    # A is shape (f, d) and b is shape (f, 1).
+    A, b = hull.equations[:, :-1], hull.equations[:, -1:]
+    eps = np.finfo(np.float32).eps
+    # The hull is defined as all points x for which Ax + b <= 0.
+    # We compare to a small positive value to account for floating
+    # point issues.
+    #
+    # Assuming x is shape (m, d), output is boolean shape (m,).
+    return np.all(np.asarray(test_points) @ A.T + b.T < eps, axis=1)
 
+
+'''
+The certainty measure is calculated by how much of one object is found in the other:
+1.) calculate the convex hull of all the objects 
+2.) check objects pairwise of how many points of each object are in the other one
+3.) calculate the ratio of object points to foreign points -> certainty measure
+'''
 def certainty_measure_color(obj1, obj2):
     if len(obj1) >= 5 and len(obj2) >= 5:
         unique, counts = np.unique(in_hull(obj2, obj1), return_counts=True)
         unique2, counts2 = np.unique(in_hull(obj1, obj2), return_counts=True)
         stat = dict(zip(unique, counts))
         stat2 = dict(zip(unique2, counts2))
+        print(stat)
+        print(stat2)
         forein_ratio_obj1 = 0
         forein_ratio_obj2 = 0
         if True in stat:
             forein_ratio_obj1 = stat[True] / len(obj1)
         if True in stat2:
             forein_ratio_obj2 = stat2[True] / len(obj2)
-        
         return 1 - (loss_function(forein_ratio_obj1)*0.5 + loss_function(forein_ratio_obj2)*0.5)
     else:
         return 0
     
-    
+def loss_function(x):
+    return (1-np.exp(-x * 1000))
