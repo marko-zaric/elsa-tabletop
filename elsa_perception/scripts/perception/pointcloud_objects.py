@@ -8,7 +8,6 @@ from sklearn.preprocessing import normalize
 from elsa_perception_msgs.srv import SurfaceFeatures
 from elsa_object_database.srv import RegisteredObjects
 from elsa_perception_msgs.msg import PhysicalScene, PhysicalFeatures, BoundingBox, SurfaceFeaturesMsg, ClusteredPointcloud
-
 import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
@@ -48,7 +47,7 @@ class PointCloudScene:
         self.dbscan_labels = None
         self.DEBUG = debug
         self.bounding_boxes = []
-        
+
         self.registered_objs = []
         self.registered_objs_values = np.empty((2,))
         self.registered_obj_client()        
@@ -247,7 +246,6 @@ class PointCloudScene:
 
         return physical_scene
 
-
     def registered_obj_client(self):
         rospy.wait_for_service("get_registered_obj_service")
         self.registered_objs = []
@@ -266,6 +264,7 @@ class PointCloudScene:
         except rospy.ServiceException as e:
             print("Registered Objects Service failed %s", e)
 
+
     def create_clustered_pointcloud_msg(self):
         points_with_label = np.empty((4,), dtype=np.float32)
         for i, obj in enumerate(self.objects_in_scene):
@@ -282,7 +281,6 @@ class PointCloudScene:
         points_with_label = points_with_label.T
         CLUSTERED_PC = ClusteredPointcloud(x=points_with_label[0].tolist(), y=points_with_label[1].tolist(), z=points_with_label[2].tolist(), cluster_label=points_with_label[3].tolist())
         return CLUSTERED_PC
-
 
     def plot_scene(self, ax=None):
         for obj in self.objects_in_scene:
@@ -561,7 +559,6 @@ class PointCloudObject:
             physical_features.obj_identity = registered_obj_names[label_index]
 
         return physical_features
-
             
 
     def __is_object_circular__(self, object):
