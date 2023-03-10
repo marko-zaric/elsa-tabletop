@@ -1,10 +1,8 @@
 import numpy as np
-from scipy.spatial import ConvexHull,Delaunay
-from matplotlib.path import Path
+from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import time
 from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import normalize
 from elsa_perception_msgs.srv import SurfaceFeatures
 from elsa_object_database.srv import RegisteredObjects
 from elsa_perception_msgs.msg import PhysicalScene, PhysicalFeatures, BoundingBox, SurfaceFeaturesMsg, ClusteredPointcloud
@@ -12,12 +10,10 @@ import rospy
 import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
 from matplotlib import colors
-import copy
-from itertools import combinations
 from perception.real_world_preprocessing import remove_plane
 
 '''
-This class describes an object according to the paper Learning Social Affordances and Using Them for Planning 
+This class describes a scene and its objects according to the paper Learning Social Affordances and Using Them for Planning 
 (https://escholarship.org/content/qt9cj412wg/qt9cj412wg.pdf) by Uyanik et. al (2013)
 The properties are divided into surface and spatial features. 
 - Spatal features are bounding box pose (x, y, z, theta) and bounding box dimensions (x, y, z)
@@ -65,13 +61,14 @@ class PointCloudScene:
         benchmark = []
         benchmark.append(time.time())
         self.xyz = xyz
+        self.xyz[:,0] = xyz[:,0]
+        self.xyz[:,1] = - xyz[:,1]
+        
         if self.DEBUG == False: 
             self.xyz[:,2] = 0.946 - xyz[:,2]
-            self.xyz[:,0] = xyz[:,0]
-            self.xyz[:,1] = - xyz[:,1]
-
             self.xyz, self.hsv = remove_plane(self.xyz, hsv, 0.01)
-
+        else:
+            self.xyz[:,2] = 1.001 - xyz[:,2]
 
         benchmark.append(time.time())
 
@@ -100,45 +97,41 @@ class PointCloudScene:
             for i, rgb_ in zip(dbscan.labels_, self.hsv):
                 objects_color[i].append(rgb_)
 
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='3d')
-        # ax.scatter(self.xyz[:,0], self.xyz[:,1], self.xyz[:,2],c = colors.hsv_to_rgb(self.hsv), s=20) 
-        # plt.show()
-
-        for i in range(len(benchmark)-1):
-            print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
+        # for i in range(len(benchmark)-1):
+        #     print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
         for i, obj in enumerate(objects):
-            # Checks if panda foot is still in the scene or not
+            # Remove Panda foot from object list (sim mean corrdinates at the moment)
             if np.linalg.norm(np.array(obj).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
                 if len(obj) > 10:
                     if hsv is None:
                         self.objects_in_scene.append(PointCloudObject(obj))
                     else:
                         self.objects_in_scene.append(PointCloudObject(obj, objects_color[i]))
+        
+        '''
+        If color segmentation is on and objects have color values:
+        Perform h-space color clustering to detect objects which are pressed up against each other.
+        Otherwise the objects in scene are the spartially clustered ones disregarding color.
+        '''
         if hsv is not None and COLOR_SEGMENTATION == True:
-            old_objects_in_scene = copy.copy(self.objects_in_scene)        
-            for whole_obj_indx, obj in enumerate(old_objects_in_scene):
-                # print("Object ", whole_obj_indx, ":")
-                xyz_object = normalize(np.array(obj.xyz_points)) 
-
-                # Parametrize h value to circle in for cyclical clustering
+            new_objects_in_scene = []      
+            for obj in self.objects_in_scene:
+                # Parametrize h value to circle in for cyclical clustering in 2D h-space 
                 h_value = np.array(obj.hsv)[:,0] * 2*np.pi
-                s_value = np.array(obj.hsv)[:,1]
-                v_value = np.array(obj.hsv)[:,2]
-                # np.save("/home/marko/saved_arrays/h_values_bad.npy", h_value)
                 h_x = np.sin(h_value)
                 h_y = np.cos(h_value)
-                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1) #, xyz_object/20)
+                h_circle = np.concatenate((np.atleast_2d(h_x).T, np.atleast_2d(h_y).T), axis=1)
+                
+                # cluster detected object by color
                 cluster = DBSCAN(eps=self.color_eps, min_samples=8) 
                 cluster.fit(h_circle)
 
-                # print("colors detected: ", len(set(cluster.labels_)))
 
-                # If the clustering algorithm detects more than one object calculate certainty measure
+                # If dbscan color cluster results in more than one color determine objects by color clustering
                 list_of_labels = list(set(cluster.labels_))
                 colors_detected = len(set(cluster.labels_))
-                print("Color clusters in object: ", colors_detected)
+                
                 if colors_detected > 1:
                     # Split the xyz values into objects according to color cluster
                     new_objs = [] 
@@ -149,26 +142,21 @@ class PointCloudScene:
                     for i, xyz_, hsv_ in zip(cluster.labels_, obj.xyz_points, obj.hsv):
                         new_objs[list_of_labels.index(i)].append([xyz_[0], xyz_[1], xyz_[2]])
                         new_objs_colors[list_of_labels.index(i)].append([hsv_[0], hsv_[1], hsv_[2]])
-                   
-                   
-                    # list_indices = range(len(new_objs))
-                    # combos = list(combinations(list_indices, 2))
-                
-                  
-                    self.objects_in_scene.pop(whole_obj_indx)
+
+                    # find all small objects in color cluster (less than 30 points)
                     new_objs_copy = new_objs.copy()
                     list_of_small_objs = []
                     for indx in range(len(set(cluster.labels_))):
                         if len(new_objs_copy[indx]) < 30:
                             list_of_small_objs.append(indx)
 
+                    # remove all small objects
                     list_of_small_objs.reverse()
-                    print("Small objects: ", list_of_small_objs)
                     for i in list_of_small_objs:
                         new_objs.pop(i)
                         new_objs_colors.pop(i)
                     
-
+                    # remove statistical outlier points in xyz-space from color clustered object 
                     for indx in range(len(new_objs)):
                         ob_array = np.array(new_objs[indx])
                         q75_x,q25_x = np.percentile(ob_array[:,0],[75,25])
@@ -196,19 +184,20 @@ class PointCloudScene:
                                 new_objs[indx].pop(i_pt)
                                 new_objs_colors[indx].pop(i_pt)
 
-                        self.objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
-        
+                        new_objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+                else:
+                    new_objects_in_scene.append(obj)
+            self.objects_in_scene = new_objects_in_scene
+
         # self.create_bounding_boxes()
-        # for obj in self.objects_in_scene:
-        #     print(len(obj.xyz_points))
-        #     print(len(obj.hsv))
+        # for i, obj in enumerate(self.objects_in_scene):
         #     fig = plt.figure()
         #     axis = fig.add_subplot(111, projection='3d')
         #     add_image_bounding_pixels(axis, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.3]))
-        #     axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=10,c = colors.hsv_to_rgb(obj.hsv))
+        #     axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=20,c = colors.hsv_to_rgb(obj.hsv))
         #     obj.plot_bounding_box(axis)
         #     plt.show()
-   
+        # exit()
             
 
     def create_bounding_boxes(self):
@@ -219,12 +208,12 @@ class PointCloudScene:
         benchmark.append(time.time())
         for i in range(len(self.objects_in_scene)):
             self.objects_in_scene[i].compute_bounding_box()
-            print(self.objects_in_scene[i].pose() + self.objects_in_scene[i].size())
+            # print(self.objects_in_scene[i].pose() + self.objects_in_scene[i].size())
             object_bounding_boxes.append(list(self.objects_in_scene[i].pose()) + self.objects_in_scene[i].size())
         benchmark.append(time.time())
 
-        for i in range(len(benchmark)-1):
-            print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
+        # for i in range(len(benchmark)-1):
+        #     print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
         self.bounding_boxes = object_bounding_boxes
         return object_bounding_boxes
@@ -269,8 +258,8 @@ class PointCloudScene:
         points_with_label = np.empty((4,), dtype=np.float32)
         for i, obj in enumerate(self.objects_in_scene):
             points = obj.xyz_points
-            print("Object ", i)
-            print("Num Points: ", len(points))
+            # print("Object ", i)
+            # print("Num Points: ", len(points))
             # fig = plt.figure()
             # ax = fig.add_subplot(111, projection='3d')
             # ax.scatter(points[:,0], points[:,1], points[:,2],c = colors.hsv_to_rgb(obj.hsv), s=20)

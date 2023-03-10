@@ -74,7 +74,7 @@ def listener():
                     np.save("/home/marko/Desktop/IIS_Research/rgb.npy", color)
 
 
-        PC = PointCloudScene()
+        PC = PointCloudScene(debug=True)
         if not (xyz.shape == (0,3) or color.shape == (0,3)):
             PC.detect_objects(xyz, color)
             PC.create_bounding_boxes()
@@ -102,7 +102,6 @@ def listener():
             seq_number += 1
 
             POINTCLOUD_CLUSTER = PC.create_clustered_pointcloud_msg()
-            # print(POINTCLOUD_CLUSTER.cluster_label)
             pub_cluster.publish(POINTCLOUD_CLUSTER)
 
     

@@ -55,7 +55,7 @@
 
   <!-- We resume the logic in empty_world.launch, changing the name of the world to be launched -->
   <include if="$(arg load_gazebo)" file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find elsa_simulator)/worlds/panda.world"/>
+    <arg name="world_name" value="$(find elsa_simulator)/worlds/color_cluster_test.world"/>
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="$(arg paused)"/>
@@ -78,22 +78,7 @@
       <arg name="ns" value="$(arg ns)" />
       <arg name="load_gripper" value="$(arg load_gripper)" />
   </include>
-
-  <group if="$(eval arg('use_custom_action_servers') == true)">
-    <node pkg="panda_sim_custom_action_server" type="start_joint_trajectory_server.py" name="joint_trajectory_server_emulator"/>
-
-      <group if="$(eval arg('load_gripper') == true)">
-        <node pkg="panda_sim_custom_action_server" type="start_gripper_action_server.py" name="gripper_action_server_emulator"/>
-      </group>
-
-    <group if="$(eval arg('start_moveit') == true)">
-      <include file="$(find panda_sim_moveit)/launch/sim_move_group.launch">
-        <arg name="load_gripper" value="$(arg load_gripper)" />
-        <arg name="info" value="true" />
-      </include>
-    </group>
-
-  </group>
+  
 
   <group if="$(eval arg('force_neutral_pose') == true)">
       <node pkg="elsa_simulator" type="force_neutral_pose.py" name="startup_script"/>
@@ -102,7 +87,8 @@
   <!-- Object database -->
   <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
   
+  <!-- Perception node -->
+
   <include file="$(find elsa_simulator)/launch/gazebo_perception.launch"/>
-  <include file="$(find elsa_panda_controls)/launch/sim_move_group.launch"/>
 
 </launch>
