@@ -9,7 +9,7 @@ The real-world tabletop scenario uses uses the following hardware:
 
 
 ## Simulator
-The Gazebo simulator is based on the GitHub package [*Panda Simulator*][pd_simulator-repo] which provides exposed **controllers** and real-time **robot state feedback** similar to the real robot when using the [*Franka ROS Interface*][fri-repo] package. A perception module using the [*Intel RealSense Gazebo ROS plugin*][gazebo_rs-repo] was added to the simulator, which observes the tabletop scene and publishes the state to a scene_description topic allowing a contiuous state-action interaction loop between the scene and the robot.
+The Gazebo simulator is based on the GitHub package [*Panda Simulator*][pandasim-repo] which provides exposed **controllers** and real-time **robot state feedback** similar to the real robot when using the [*Franka ROS Interface*][fri-repo] package. A perception module using the [*Intel RealSense Gazebo ROS plugin*][gazebo_rs-repo] was added to the simulator, which observes the tabletop scene and publishes the state to a scene_description topic allowing a contiuous state-action interaction loop between the scene and the robot.
 
 ## Features
 
@@ -22,12 +22,6 @@ The Gazebo simulator is based on the GitHub package [*Panda Simulator*][pd_simul
 *See [change log](https://git.uibk.ac.at/c7031403/panda_simulator/blob/master/changeLog.md) for details about new feature updates.*
 
 ### Installation
-
-ROS Melodic (noetic-devel branch): [![Build Status](https://travis-ci.com/justagist/panda_simulator.svg?branch=noetic-devel)](https://travis-ci.org/justagist/panda_simulator)
-
-ROS Melodic (melodic-devel branch): [![Build Status](https://travis-ci.com/justagist/panda_simulator.svg?branch=melodic-devel)](https://travis-ci.com/justagist/panda_simulator)
-
-ROS Kinetic (kinetic-devel branch; *not maintained*): [![Build Status](https://travis-ci.com/justagist/panda_simulator.svg?branch=kinetic-devel)](https://travis-ci.com/justagist/panda_simulator)
 
 #### Dependencies
 
@@ -178,6 +172,7 @@ If you use this software, please cite it using [![DOI](https://zenodo.org/badge/
 
    [fri-repo]: <https://github.com/justagist/franka_ros_interface>
    [pd_simulator-repo]: <https://github.com/justagist/franka_panda_description>
+   [pandasim-repo]: <https://github.com/justagist/panda_simulator>
    [uyanik-paper]: <https://escholarship.org/content/qt9cj412wg/qt9cj412wg.pdf>
    [pr-repo]: <https://github.com/justagist/panda_robot>
    [libfranka-doc]: <https://frankaemika.github.io/docs/installation_linux.html#building-from-source>
