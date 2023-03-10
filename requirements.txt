@@ -1,2 +1,8 @@
 numpy 
 numpy-quaternion==2020.5.11.13.33.35
+scipy==1.8.0
+matplotlib==3.5.1
+scikit-learn==1.0.2
+xacro
+tomlkit==0.10.2
+argparse==1.1
