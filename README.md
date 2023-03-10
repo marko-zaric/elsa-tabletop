@@ -1,34 +1,25 @@
-# Panda Simulator [![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](https://github.com/justagist/panda_simulator/tree/noetic-devel) [![ROS Version](https://img.shields.io/badge/ROS-Noetic-brightgreen.svg?logo=ros)](https://ros.org/) [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg?logo=python)](https://www.python.org/downloads/release/python-360/) [![Build Status](https://travis-ci.com/justagist/panda_simulator.svg?branch=noetic-devel)](https://travis-ci.com/justagist/panda_simulator)
+# ELSA Panda Simulator [![ROS Version](https://img.shields.io/badge/ROS-Noetic-brightgreen.svg?logo=ros)](https://ros.org/) [![Python 3.8.10+](https://img.shields.io/badge/python-3.8.10+-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3810/) [![franka_ros_version](https://img.shields.io/badge/franka_ros-v0.7.1-blue.svg)](https://github.com/frankaemika/franka_ros) [![franka_ros_interface_version](https://img.shields.io/badge/franka_ros_interface-v0.7.1-yellow.svg)](https://github.com/justagist/franka_ros_interface)
 
-[![franka_ros_version](https://img.shields.io/badge/franka_ros-v0.7.1-blue.svg)](https://github.com/frankaemika/franka_ros) [![franka_ros_interface_version](https://img.shields.io/badge/franka_ros_interface-v0.7.1-yellow.svg)](https://github.com/justagist/franka_ros_interface)
+This packege contains a Gazebo simulation environment and real-world control and perception equivalent for **ELSA** - Effective Learning of Social Affordances for Human-Robot Interaction (ANR/FWF AAPG, 2022-2026) **WP3: Social Affordances for Action Execution**. It is a recreation of the tabletop scenario of the paper [*Learning Social Affordances and Using Them for Planning by Uyanik et. al (2013)*][uyanik-paper] using a Franka Emika Panda robot with a topdown Intel RealSense D435 depth camera for perception.
 
-A **Gazebo simulator** for the Franka Emika Panda robot with ROS interface, providing exposed **controllers** and real-time **robot state feedback** similar to the real robot when using the [*Franka ROS Interface*][fri-repo] package.
+## Hardware
+The real-world tabletop scenario uses uses the following hardware:
+- [Franka Emika Panda][panda-hardware]
+- [Intel RealSense D435][intelrs-hardware]
+
+
+## Simulator
+The Gazebo simulator is based on the GitHub package [*Panda Simulator*][pd_simulator-repo] which provides exposed **controllers** and real-time **robot state feedback** similar to the real robot when using the [*Franka ROS Interface*][fri-repo] package. A perception module using the [*Intel RealSense Gazebo ROS plugin*][gazebo_rs-repo] was added to the simulator, which observes the tabletop scene and publishes the state to a scene_description topic allowing a contiuous state-action interaction loop between the scene and the robot.
 
 ## Features
 
-- Customisable low-level *controllers* (joint position, velocity, torque) available that can be controlled through ROS topics (including position control for gripper) or [Python API][fri-repo].
-- Real-time *robot state* (end-effector state, joint state, controller state, etc.) available through ROS topics.
-- The [*Franka ROS Interface*][fri-repo] package (which is a ROS interface for controlling the real Panda robot) can also be used with the panda_simulator, providing direct sim-to-real code transfer. The [PandaRobot][pr-repo] package which provides simplified python API for the robot can also be used for direct sim-to-real code transfer, as well as for performing real-time kinematics and dynamics computation.
-- Supports MoveIt planning and control for Franka Panda Emika robot arm and Franka Gripper, as well as smooth motion control using customisable ROS JointTrajectoryAction service.
+- Automated physical scene observation with detailed object information (bounding box, surface features).
 
-*For a simple bare-bone Gazebo simulator created using inbuilt Gazebo ROS controllers and transmission interfaces, see [Gazebo Panda](https://github.com/justagist/gazebo_panda).*
+- Services for inverse kinematics calculation using MoveIt! and joint control commands (Sim Only).
 
-*See [version log](https://github.com/justagist/panda_simulator/blob/noetic-devel/versionLog.md) for details about new feature updates.*
+- Object database for effect clustering in scene changes
 
-### Control and Monitor robot using Python API
-
-Python API: [Franka ROS Interface][fri-repo], [PandaRobot][pr-repo]
-
-  ![vid](https://github.com/justagist/franka_ros_interface/blob/master/assets/panda_robot_demo.gif)
- Watch video [here](https://youtu.be/4bEVysUIvOY)
-
-  ![vid](https://github.com/justagist/franka_ros_interface/blob/master/assets/panda_simulator.gif)
- Watch video [here](https://www.youtube.com/watch?v=NdSbXC0r7tU)
-
-### Control using MoveIt
-
-  ![vid](https://github.com/justagist/franka_ros_interface/blob/master/assets/moveit_demo.gif)
- Watch video [here](https://youtu.be/a_HEmYzqEnk)
+*See [change log](https://git.uibk.ac.at/c7031403/panda_simulator/blob/master/changeLog.md) for details about new feature updates.*
 
 ### Installation
 
@@ -186,7 +177,11 @@ Copyright (c) 2019-2021, Saif Sidhik
 If you use this software, please cite it using [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3747459.svg)](https://doi.org/10.5281/zenodo.3747459).
 
    [fri-repo]: <https://github.com/justagist/franka_ros_interface>
-   [fpd-repo]: <https://github.com/justagist/franka_panda_description>
+   [pd_simulator-repo]: <https://github.com/justagist/franka_panda_description>
+   [uyanik-paper]: <https://escholarship.org/content/qt9cj412wg/qt9cj412wg.pdf>
    [pr-repo]: <https://github.com/justagist/panda_robot>
    [libfranka-doc]: <https://frankaemika.github.io/docs/installation_linux.html#building-from-source>
    [franka-ros]: <https://frankaemika.github.io/docs/franka_ros.html>
+   [intelrs-hardware]: <https://www.intelrealsense.com/depth-camera-d435/>
+   [panda-hardware]: <https://www.franka.de/>
+   [gazebo_rs-repo]: <https://github.com/pal-robotics/realsense_gazebo_plugin>
