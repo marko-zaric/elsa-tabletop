@@ -9,7 +9,7 @@ The real-world tabletop scenario uses uses the following hardware:
 
 
 ## Simulator
-The Gazebo simulator is based on the GitHub package [*Panda Simulator*][pandasim-repo] which provides exposed **controllers** and real-time **robot state feedback** similar to the real robot when using the [*Franka ROS Interface*][fri-repo] package. A perception module using the [*Intel RealSense Gazebo ROS plugin*][gazebo_rs-repo] was added to the simulator, which observes the tabletop scene and publishes the state to a scene_description topic allowing a contiuous state-action interaction loop between the scene and the robot.
+The Gazebo simulator is based on the GitHub package [*Panda Simulator*][pandasim-repo] which provides exposed **controllers** and real-time **robot state feedback** similar to the real robot when using the [*Franka ROS Interface*][fri-repo] package. A **perception module** using the [*Intel RealSense Gazebo ROS plugin*][gazebo_rs-repo] was added to the simulator, which observes the tabletop scene and publishes the state to a scene_description topic allowing a contiuous state-action interaction loop between the scene and the robot.
 
 ## Features
 
