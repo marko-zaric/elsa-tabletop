@@ -35,8 +35,8 @@ def callback(data):
 def listener():
     rospy.init_node("read_cam_data", anonymous=True)
     rospy.Subscriber("/downsample/output", PointCloud2, callback=callback) # 
-    pub = rospy.Publisher('elsa_perception/scene_description', PhysicalScene, queue_size=1)
-    pub_cluster = rospy.Publisher('elsa_perception/clustered_pointcloud', ClusteredPointcloud , queue_size=1)
+    pub = rospy.Publisher('/scene_description', PhysicalScene, queue_size=1)
+    pub_cluster = rospy.Publisher('/clustered_pointcloud', ClusteredPointcloud , queue_size=1)
     counter = 0
     while not rospy.is_shutdown():
         rospy.wait_for_message("/downsample/output", PointCloud2)

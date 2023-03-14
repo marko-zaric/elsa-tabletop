@@ -46,12 +46,12 @@ class PointCloudScene:
 
         self.registered_objs = []
         self.registered_objs_values = np.empty((2,))
-        self.registered_obj_client()        
-
         if debug is False:
             self.color_eps = 0.075
         else:
             self.color_eps = 0.2
+            # registered objects Sim only
+            self.registered_obj_client()    
 
     
     def detect_objects(self, xyz, hsv=None):
@@ -229,7 +229,7 @@ class PointCloudScene:
         list_physical_features = []
 
         for obj in self.objects_in_scene:
-            list_physical_features.append(obj.create_physical_features_msg(self.registered_objs, self.registered_objs_values))
+            list_physical_features.append(obj.create_physical_features_msg(self.registered_objs, self.registered_objs_values, self.DEBUG))
 
         physical_scene = PhysicalScene(physical_scene=list_physical_features, number_of_objects=len(self.objects_in_scene))
 
@@ -508,7 +508,7 @@ class PointCloudObject:
         except rospy.ServiceException as e:
             print("Service failed %s", e)
 
-    def create_physical_features_msg(self, registered_obj_names, registered_obj_values):
+    def create_physical_features_msg(self, registered_obj_names, registered_obj_values, sim_on=False):
         physical_features = PhysicalFeatures()
         bounding_box = BoundingBox()
         surface_features = SurfaceFeaturesMsg()
@@ -539,13 +539,15 @@ class PointCloudObject:
             y = np.sin(np.pi*2*hsv_mean[0])
 
 
-            total = np.abs(registered_obj_values - np.array([[x,y]]))
-            label_index = np.sum(total,axis=1).argmin()
-
-            # debugging non-unicity of object class (color)
-            #rospy.logerr(registered_obj_names[label_index])
-            #rospy.logerr(label_index)
-            physical_features.obj_identity = registered_obj_names[label_index]
+            if sim_on == True:
+                total = np.abs(registered_obj_values - np.array([[x,y]]))
+                label_index = np.sum(total,axis=1).argmin()
+                # debugging non-unicity of object class (color)
+                #rospy.logerr(registered_obj_names[label_index])
+                #rospy.logerr(label_index)
+                physical_features.obj_identity = registered_obj_names[label_index]
+            else:
+                physical_features.obj_identity = "Unregistered Object"
 
         return physical_features
             
