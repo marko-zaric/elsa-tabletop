@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="box">
+  <xacro:include filename="$(find elsa_training_data_generation)/models/materials.xacro" />
+  <!-- Command-line arguments -->
+  <xacro:arg name="width" default="0.05"/>
+  <xacro:arg name="height" default="0.05"/>
+  <xacro:arg name="depth" default="0.05"/>
+  <xacro:arg name="mass" default="0.5"/>
+  <xacro:arg name="xyz" default="0.0 0.0 0.0"/>
+  <xacro:arg name="rpy" default="0.0 0.0 0.0"/>
+  
+  <!-- Properties -->
+  <xacro:property name="width" value="$(arg width)"/>
+  <xacro:property name="height" value="$(arg height)"/>
+  <xacro:property name="depth" value="$(arg depth)"/>
+  <xacro:property name="size" value="$(arg width) $(arg depth) $(arg height)"/>
+  <xacro:property name="mass" value="$(arg mass)"/>
+  <xacro:property name="xyz" value="$(arg xyz)"/>
+  <xacro:property name="rpy" value="$(arg rpy)"/>
+  
+  <!-- Box model macro -->
+  <xacro:macro name="box_model" params="xyz rpy size">
+    <origin xyz="${xyz}" rpy="${rpy}"/>
+    <geometry>
+      <box size="${size}"/>
+    </geometry>
+  </xacro:macro>
+
+  <!-- Solid cuboid inertial model macro -->
+  <xacro:macro name="cuboid_inertial" params="xyz rpy mass width height depth">
+    <xacro:property name="w_sq" value="${width*width}"/>
+    <xacro:property name="h_sq" value="${height*height}"/>
+    <xacro:property name="d_sq" value="${depth*depth}"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <mass value="${mass}" />
+      <inertia ixx="${(mass*(h_sq+d_sq))/12}" ixy="0.0" ixz="0.0"
+               iyy="${(mass*(w_sq+d_sq))/12}" iyz="0.0"
+               izz="${(mass*(w_sq+h_sq))/12}" />
+  </xacro:macro>
+  
+  <link name="box">
+    <visual>
+      <xacro:box_model xyz="${xyz}" rpy="${rpy}" size="${size}"/>
+    </visual>
+    <collision>
+      <xacro:box_model xyz="${xyz}" rpy="${rpy}" size="${size}"/>
+    </collision>
+    <friction>
+        <ode>
+          <mu>0.4</mu>
+          <fdir1>0 0 1</fdir1>
+          <slip1>0.0</slip1>
+          <slip2>0.0</slip2>
+        </ode>
+    </friction>
+    <inertial>
+      <xacro:cuboid_inertial xyz="${xyz}" rpy="${rpy}" mass="${mass}" width="${width}" height="${height}" depth="${depth}"/>
+    </inertial>
+  </link>
+
+</robot>
