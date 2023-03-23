@@ -98,9 +98,12 @@
   <group if="$(eval arg('force_neutral_pose') == true)">
       <node pkg="elsa_simulator" type="force_neutral_pose.py" name="startup_script"/>
   </group> 
-  
+
   <!-- Perception node -->
 
-  <include file="$(find elsa_simulator)/launch/gazebo_perception.launch"/>
+  <include file="$(find elsa_simulator)/launch/gazebo_perception.launch">
+    <arg name="color_on" value="false" />
+    <arg name="register_objects" value="false" />
+  </include>
 
 </launch>

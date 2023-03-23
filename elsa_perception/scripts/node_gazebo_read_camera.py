@@ -14,7 +14,8 @@ import std_msgs.msg
 
 SCENE = None
 DATA_CALLBACK = None
-ENABLE_COLOR = True
+ENABLE_COLOR = rospy.get_param('/read_cam_data/color_on')
+REGISTER_OBJECTS = rospy.get_param('/read_cam_data/register_objects')
 SAVE_POINT_CLOUD = False
 HSV_COLOR = True
 
@@ -74,7 +75,7 @@ def listener():
                     np.save("/home/marko/Desktop/IIS_Research/rgb.npy", color)
 
 
-        PC = PointCloudScene(debug=True)
+        PC = PointCloudScene(debug=True, register_objects=REGISTER_OBJECTS)
         if not (xyz.shape == (0,3) or color.shape == (0,3)):
             PC.detect_objects(xyz, color)
             PC.create_bounding_boxes()

@@ -36,7 +36,7 @@ def add_image_bounding_pixels(ax, min_point, max_point):
     ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2], s=0.0001)
 
 class PointCloudScene:
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, register_objects=True):
         self.objects_in_scene = []
         self.xyz = None
         self.hsv = None
@@ -48,10 +48,12 @@ class PointCloudScene:
         self.registered_objs_values = np.empty((2,))
         if debug is False:
             self.color_eps = 0.075
+            self.register_objects = False
         else:
             self.color_eps = 0.2
             # registered objects Sim only
-            self.registered_obj_client()    
+            self.register_objects = register_objects
+            if self.register_objects: self.registered_obj_client()    
 
     
     def detect_objects(self, xyz, hsv=None):
@@ -194,7 +196,7 @@ class PointCloudScene:
         #     fig = plt.figure()
         #     axis = fig.add_subplot(111, projection='3d')
         #     add_image_bounding_pixels(axis, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.3]))
-        #     axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=20,c = colors.hsv_to_rgb(obj.hsv))
+        #     axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=20, c = colors.hsv_to_rgb(obj.hsv))
         #     obj.plot_bounding_box(axis)
         #     plt.show()
         # exit()
@@ -229,7 +231,7 @@ class PointCloudScene:
         list_physical_features = []
 
         for obj in self.objects_in_scene:
-            list_physical_features.append(obj.create_physical_features_msg(self.registered_objs, self.registered_objs_values, self.DEBUG))
+            list_physical_features.append(obj.create_physical_features_msg(self.registered_objs, self.registered_objs_values, self.register_objects))
 
         physical_scene = PhysicalScene(physical_scene=list_physical_features, number_of_objects=len(self.objects_in_scene))
 
@@ -508,7 +510,7 @@ class PointCloudObject:
         except rospy.ServiceException as e:
             print("Service failed %s", e)
 
-    def create_physical_features_msg(self, registered_obj_names, registered_obj_values, sim_on=False):
+    def create_physical_features_msg(self, registered_obj_names, registered_obj_values, register_objects=False):
         physical_features = PhysicalFeatures()
         bounding_box = BoundingBox()
         surface_features = SurfaceFeaturesMsg()
@@ -539,7 +541,7 @@ class PointCloudObject:
             y = np.sin(np.pi*2*hsv_mean[0])
 
 
-            if sim_on == True:
+            if register_objects == True:
                 total = np.abs(registered_obj_values - np.array([[x,y]]))
                 label_index = np.sum(total,axis=1).argmin()
                 # debugging non-unicity of object class (color)

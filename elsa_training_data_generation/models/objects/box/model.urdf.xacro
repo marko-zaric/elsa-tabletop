@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="box">
-  <xacro:include filename="$(find elsa_training_data_generation)/models/materials.xacro" />
   <!-- Command-line arguments -->
   <xacro:arg name="width" default="0.05"/>
   <xacro:arg name="height" default="0.05"/>
