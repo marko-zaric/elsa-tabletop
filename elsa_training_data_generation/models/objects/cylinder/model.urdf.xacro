@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="cylinder">
+
+  <!-- Command-line arguments -->
+  <xacro:arg name="radius" default="0.02"/>
+  <xacro:arg name="length" default="0.05"/>
+  <xacro:arg name="mass" default="0.01"/>
+  <xacro:arg name="xyz" default="0.0 0.0 0.0"/>
+  <xacro:arg name="rpy" default="0.0 0.0 0.0"/>
+
+  <!-- Properties -->
+  <xacro:property name="radius" value="$(arg radius)"/>
+  <xacro:property name="length" value="$(arg length)"/>
+  <xacro:property name="mass" value="$(arg mass)"/>
+  <xacro:property name="xyz" value="$(arg xyz)"/>
+  <xacro:property name="rpy" value="$(arg rpy)"/>
+
+  <!-- Cylinder model macro -->
+  <xacro:macro name="cylinder_model" params="xyz rpy length radius">
+    <origin xyz="${xyz}" rpy="${rpy}"/>
+    <geometry>
+      <cylinder length="${length}" radius="${radius}"/>
+    </geometry>
+  </xacro:macro>
+
+  <!-- Solid cylinder inertial model -->
+  <xacro:macro name="cylinder_inertial" params="xyz rpy mass radius height">
+    <xacro:property name="r_sq" value="${radius*radius}"/>
+    <xacro:property name="h_sq" value="${height*height}"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <mass value="${mass}" />
+    <inertia ixx="${mass/12 * ((3*r_sq) + h_sq)}" ixy="0.0" ixz="0.0"
+             iyy="${mass/12 * ((3*r_sq) + h_sq)}" iyz="0.0"
+             izz="${(mass*r_sq)/12}" />
+  </xacro:macro>
+
+  <link name="cylinder">
+    <visual>
+      <xacro:cylinder_model xyz="${xyz}" rpy="${rpy}" length="${length}" radius="${radius}"/>
+    </visual>
+    <collision>
+      <xacro:cylinder_model xyz="${xyz}" rpy="${rpy}" length="${length}" radius="${radius}"/>
+    </collision>
+    <friction>
+        <ode>
+          <mu>0.4</mu>
+          <fdir1>0 0 1</fdir1>
+          <slip1>0.0</slip1>
+          <slip2>0.0</slip2>
+        </ode>
+    </friction>
+    <inertial>
+      <xacro:cylinder_inertial xyz="${xyz}" rpy="${rpy}" mass="${mass}" radius="${radius}" height="${length}"/>
+    </inertial>
+     <material name="Blue">
+       <color rgba="0.0 1.0 0 1.0"/>
+     </material>
+  </link>
+
+</robot>

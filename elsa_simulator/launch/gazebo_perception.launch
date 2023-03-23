@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
+  <arg name="color_on" default="true"/>
+  <arg name="register_objects" default="true"/>
+
   <node pkg="elsa_perception" type="surface_feature_service" name="surface_feature_service"/>
 
   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
@@ -13,6 +16,12 @@
     </rosparam>
   </node>
 
-  <node pkg="elsa_perception" type="node_gazebo_read_camera.py" name="read_cam_data" />
+  <!-- Object database -->
+  <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
+
+  <node pkg="elsa_perception" type="node_gazebo_read_camera.py" name="read_cam_data">
+    <param name="color_on" value="$(arg color_on)"/>
+    <param name="register_objects" value="$(arg register_objects)"/>
+  </node>
   
 </launch>

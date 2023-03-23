@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="sphere">
+
+  <!-- Command-line arguments -->
+  <xacro:arg name="radius" default="0.02"/>
+  <xacro:arg name="mass" default="0.01"/>
+  <xacro:arg name="xyz" default="0.0 0.0 0.0"/>
+  <xacro:arg name="rpy" default="0.0 0.0 0.0"/>
+  
+  <!-- Properties -->
+  <xacro:property name="radius" value="$(arg radius)"/>
+  <xacro:property name="mass" value="$(arg mass)"/>
+  <xacro:property name="xyz" value="$(arg xyz)"/>
+  <xacro:property name="rpy" value="$(arg rpy)"/>
+  
+  <!-- Sphere model macro -->
+  <xacro:macro name="sphere_model" params="xyz rpy radius">
+    <origin xyz="${xyz}" rpy="${rpy}"/>
+    <geometry>
+      <sphere radius="${radius}"/>
+    </geometry>
+  </xacro:macro>
+
+  <!-- Solid sphere inertial model macro -->
+  <xacro:macro name="sphere_inertial" params="xyz rpy mass radius">
+    <xacro:property name="r_sq" value="${radius*radius}"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <mass value="${mass}" />
+      <inertia ixx="${(2*mass*r_sq)/5}" ixy="0.0" ixz="0.0"
+               iyy="${(2*mass*r_sq)/5}" iyz="0.0"
+               izz="${(2*mass*r_sq)/5}" />
+  </xacro:macro>
+  
+  <link name="sphere">
+    <visual>
+      <xacro:sphere_model xyz="${xyz}" rpy="${rpy}" radius="${radius}"/>
+    </visual>
+    <collision>
+      <xacro:sphere_model xyz="${xyz}" rpy="${rpy}" radius="${radius}"/>
+    </collision>
+    <friction>
+        <ode>
+          <mu>0.4</mu>
+          <fdir1>0 0 1</fdir1>
+          <slip1>0.0</slip1>
+          <slip2>0.0</slip2>
+        </ode>
+    </friction>
+    <inertial>
+      <xacro:sphere_inertial xyz="${xyz}" rpy="${rpy}" mass="${mass}" radius="${radius}"/>
+    </inertial>
+     <material name="Green">
+       <color rgba="0 0 1.0 1.0"/>
+     </material>
+  </link>
+
+</robot>

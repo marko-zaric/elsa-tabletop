@@ -55,7 +55,7 @@
 
   <!-- We resume the logic in empty_world.launch, changing the name of the world to be launched -->
   <include if="$(arg load_gazebo)" file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find elsa_simulator)/worlds/panda.world"/>
+    <arg name="world_name" value="$(find elsa_simulator)/worlds/empty_table.world"/>
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="$(arg paused)"/>
@@ -99,14 +99,11 @@
       <node pkg="elsa_simulator" type="force_neutral_pose.py" name="startup_script"/>
   </group> 
 
-  <!-- IK conversion -->
-  <node pkg="elsa_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/>
-
-  <!-- Object database -->
-  <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
-  
   <!-- Perception node -->
 
-  <include file="$(find elsa_simulator)/launch/gazebo_perception.launch"/>
+  <include file="$(find elsa_simulator)/launch/gazebo_perception.launch">
+    <arg name="color_on" value="false" />
+    <arg name="register_objects" value="false" />
+  </include>
 
 </launch>
