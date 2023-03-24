@@ -2,6 +2,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import time
+from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import DBSCAN
 from elsa_perception_msgs.srv import SurfaceFeatures
 from elsa_object_database.srv import RegisteredObjects
@@ -11,6 +12,22 @@ import sensor_msgs.msg as sensor_msgs
 import std_msgs.msg as std_msgs
 from matplotlib import colors
 from perception.real_world_preprocessing import remove_plane
+
+def get_eps(pointcloud):
+    pc = np.array(pointcloud)
+    neigh = NearestNeighbors(n_neighbors=2)
+    nbrs = neigh.fit(pc)
+    distances, indices = nbrs.kneighbors(pc)
+    distances = np.sort(distances, axis=0)
+    distances = distances[:,1]
+    # print(np.max(distances) - np.mean(distances))
+    # plt.figure(figsize=(8,5))
+    # plt.plot(distances)
+    # plt.title('K-distance Graph',fontsize=20)
+    # plt.xlabel('Data Points sorted by distance',fontsize=14)
+    # plt.ylabel('Epsilon',fontsize=14)
+    # plt.show()
+    return np.max(distances) - np.mean(distances)
 
 '''
 This class describes a scene and its objects according to the paper Learning Social Affordances and Using Them for Planning 
@@ -50,7 +67,7 @@ class PointCloudScene:
             self.color_eps = 0.075
             self.register_objects = False
         else:
-            self.color_eps = 0.2
+            self.color_eps = 0.05 #0.2
             # registered objects Sim only
             self.register_objects = register_objects
             if self.register_objects: self.registered_obj_client()    
@@ -160,33 +177,21 @@ class PointCloudScene:
                     
                     # remove statistical outlier points in xyz-space from color clustered object 
                     for indx in range(len(new_objs)):
-                        ob_array = np.array(new_objs[indx])
-                        q75_x,q25_x = np.percentile(ob_array[:,0],[75,25])
-                        q75_y,q25_y = np.percentile(ob_array[:,1],[75,25])
-                        q75_z,q25_z = np.percentile(ob_array[:,2],[75,25])
-                        intr_qr_x = q75_x-q25_x
-                        max_x = q75_x+(1.5*intr_qr_x)
-                        min_x = q25_x-(1.5*intr_qr_x)
-                        intr_qr_y = q75_y-q25_y
-                        max_y = q75_y+(1.5*intr_qr_y)
-                        min_y = q25_y-(1.5*intr_qr_y)
-                        intr_qr_z = q75_x-q25_x
-                        max_z = q75_z+(1.5*intr_qr_z)
-                        min_z = q25_z-(1.5*intr_qr_z)
+                        arr_xyz = np.array(new_objs[indx])
+                        arr_col = np.array(new_objs_colors[indx])
+                        model = DBSCAN(eps = get_eps(new_objs[indx]), min_samples = 10).fit(arr_xyz)
+                        cols_ = model.labels_ +100
+                        biggest_cluster_label = np.bincount(cols_).argmax()
+                        arr_xyz = arr_xyz[~(cols_ != biggest_cluster_label)]
+                        arr_col = arr_col[~(cols_ != biggest_cluster_label)]
+                        # fig = plt.figure()
+                        # axis = fig.add_subplot(111, projection='3d')
+                        # add_image_bounding_pixels(axis, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.3]))
                         
-                        for i_pt in range(len(new_objs[indx])-1,-1,-1):
-                            pt = new_objs[indx][i_pt]
-                            if min_x > pt[0] or max_x < pt[0]: 
-                                new_objs[indx].pop(i_pt)
-                                new_objs_colors[indx].pop(i_pt)
-                            elif min_y > pt[1] or max_y < pt[1]:
-                                new_objs[indx].pop(i_pt)
-                                new_objs_colors[indx].pop(i_pt)
-                            elif min_z > pt[2] or max_z < pt[2]:
-                                new_objs[indx].pop(i_pt)
-                                new_objs_colors[indx].pop(i_pt)
-
-                        new_objects_in_scene.append(PointCloudObject(new_objs[indx], new_objs_colors[indx]))
+                        # scatter = axis.scatter(arr[:,0],arr[:,1],arr[:,2], c=cols_)
+                        # axis.legend(*scatter.legend_elements())
+                        # plt.show()
+                        new_objects_in_scene.append(PointCloudObject(arr_xyz.tolist(), arr_col.tolist()))
                 else:
                     new_objects_in_scene.append(obj)
             self.objects_in_scene = new_objects_in_scene
@@ -195,8 +200,15 @@ class PointCloudScene:
         # for i, obj in enumerate(self.objects_in_scene):
         #     fig = plt.figure()
         #     axis = fig.add_subplot(111, projection='3d')
+        #     h_val = np.array(obj.hsv)[:,0]
+        #     new_stack = (np.vstack((h_val,np.ones_like(h_val),np.ones_like(h_val)))).T
         #     add_image_bounding_pixels(axis, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.3]))
-        #     axis.scatter(obj.xyz_points[:,0], obj.xyz_points[:,1], obj.xyz_points[:,2], s=20, c = colors.hsv_to_rgb(obj.hsv))
+        #     axis.scatter(obj.xyz_points[:,0], 
+        #                  obj.xyz_points[:,1], 
+        #                  obj.xyz_points[:,2], 
+        #                  s=20, 
+        #                  c = colors.hsv_to_rgb(new_stack)
+        #                  )
         #     obj.plot_bounding_box(axis)
         #     plt.show()
         # exit()

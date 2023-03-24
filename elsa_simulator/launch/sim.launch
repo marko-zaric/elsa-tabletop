@@ -101,9 +101,6 @@
 
   <!-- IK conversion -->
   <node pkg="elsa_panda_controls" type="node_gazebo_joint_configuration_server.py" name="joint_configuration_server"/>
-
-  <!-- Object database -->
-  <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
   
   <!-- Perception node -->
 

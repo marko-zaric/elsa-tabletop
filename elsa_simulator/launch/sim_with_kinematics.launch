@@ -98,9 +98,6 @@
   <group if="$(eval arg('force_neutral_pose') == true)">
       <node pkg="elsa_simulator" type="force_neutral_pose.py" name="startup_script"/>
   </group> 
-
-  <!-- Object database -->
-  <node pkg="elsa_object_database" type="registered_objects_service_server.py" name="elsa_object_database"/>
   
   <include file="$(find elsa_simulator)/launch/gazebo_perception.launch"/>
   <include file="$(find elsa_panda_controls)/launch/sim_move_group.launch"/>
