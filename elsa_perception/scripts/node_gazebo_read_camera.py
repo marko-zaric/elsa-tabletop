@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-from perception.pointcloud_objects import PointCloudScene
+from perception.pointcloud_scene import PointCloudScene
 from sensor_msgs.point_cloud2 import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import ctypes
