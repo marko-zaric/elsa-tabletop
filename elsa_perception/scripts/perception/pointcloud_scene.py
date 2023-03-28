@@ -247,7 +247,10 @@ class PointCloudScene:
                 if count_dict[i] == 1:
                     labels[np.where(min_dists_idx == i)[0][0]] = self.registered_objs[i]
                 if count_dict[i] > 1:
-                    conflicting_objects = np.where(min_dists_idx == i)
+                    conflicting_objects = np.where(min_dists_idx == i)[0]
+                    print("CONFLICTING OBJECTS")
+                    print(conflicting_objects)
+                    print(np.where(min_dists_idx == i))
                     min_var = 1000
                     min_var_idx = -1
                     for indx in conflicting_objects:

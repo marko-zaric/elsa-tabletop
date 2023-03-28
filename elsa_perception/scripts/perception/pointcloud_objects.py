@@ -254,8 +254,8 @@ class PointCloudObject:
         if self.hsv == None:
             physical_features.mean_color = [-1,-1,-1] 
         else:
-            # hsv_mean = np.mean(self.hsv, axis=0)
-            # physical_features.mean_color = hsv_mean
+            hsv_mean = np.mean(self.hsv, axis=0)
+            physical_features.mean_color = hsv_mean
             # h_values = np.array(self.hsv)[:,0]
             # xs = np.cos(np.pi*2*h_values)
             # ys = np.sin(np.pi*2*h_values)
