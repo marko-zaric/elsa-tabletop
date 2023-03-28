@@ -14,8 +14,8 @@ import std_msgs.msg
 
 SCENE = None
 DATA_CALLBACK = None
-ENABLE_COLOR = rospy.get_param('/read_cam_data/color_on')
-REGISTER_OBJECTS = rospy.get_param('/read_cam_data/register_objects')
+ENABLE_COLOR = True #rospy.get_param('/read_cam_data/color_on')
+REGISTER_OBJECTS = True #rospy.get_param('/read_cam_data/register_objects')
 SAVE_POINT_CLOUD = False
 HSV_COLOR = True
 

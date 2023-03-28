@@ -229,7 +229,7 @@ class PointCloudObject:
         except rospy.ServiceException as e:
             print("Service failed %s", e)
 
-    def create_physical_features_msg(self, registered_obj_names, registered_obj_values, register_objects=False):
+    def create_physical_features_msg(self, obj_name, register_objects=False):
         physical_features = PhysicalFeatures()
         bounding_box = BoundingBox()
         surface_features = SurfaceFeaturesMsg()
@@ -254,21 +254,24 @@ class PointCloudObject:
         if self.hsv == None:
             physical_features.mean_color = [-1,-1,-1] 
         else:
-            hsv_mean = np.mean(self.hsv, axis=0)
-            physical_features.mean_color = hsv_mean
-            x = np.cos(np.pi*2*hsv_mean[0])
-            y = np.sin(np.pi*2*hsv_mean[0])
-
-
-            if register_objects == True:
-                total = np.abs(registered_obj_values - np.array([[x,y]]))
-                label_index = np.sum(total,axis=1).argmin()
+            # hsv_mean = np.mean(self.hsv, axis=0)
+            # physical_features.mean_color = hsv_mean
+            # h_values = np.array(self.hsv)[:,0]
+            # xs = np.cos(np.pi*2*h_values)
+            # ys = np.sin(np.pi*2*h_values)
+            # h_space = np.vstack((xs,ys)).T
+            # mean_h_space = np.mean(h_space, axis=0)
+            # variance_h_space = np.var(h_space, axis=0)
+            # print(variance_h_space)
+            # if register_objects == True:
+            #     total = np.abs(registered_obj_values - mean_h_space)
+            #     label_index = np.sum(total,axis=1).argmin()
                 # debugging non-unicity of object class (color)
                 #rospy.logerr(registered_obj_names[label_index])
                 #rospy.logerr(label_index)
-                physical_features.obj_identity = registered_obj_names[label_index]
-            else:
-                physical_features.obj_identity = "Unregistered Object"
+            physical_features.obj_identity = obj_name #registered_obj_names[label_index]
+            # else:
+            #     physical_features.obj_identity = "Unregistered Object"
 
         return physical_features
             
