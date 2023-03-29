@@ -261,12 +261,14 @@ class PointCloudScene:
                     for i in conflicting_objects:
                         if i == min_var_idx:
                             continue
-                        labels[i] = "High variance dropped out!"
+                        #labels[i] = "High variance dropped out!"
+                        labels[i] = "Ignore"
             else:
                 labels[np.where(min_dists_idx == i)[0][0]] = "Unregistered Object!"              
 
         for i, obj in enumerate(self.objects_in_scene):
-            list_physical_features.append(obj.create_physical_features_msg(labels[i], self.register_objects))
+            if labels[i] != "Ignore":
+                list_physical_features.append(obj.create_physical_features_msg(labels[i], self.register_objects))
 
         physical_scene = PhysicalScene(physical_scene=list_physical_features, number_of_objects=len(self.objects_in_scene))
 
