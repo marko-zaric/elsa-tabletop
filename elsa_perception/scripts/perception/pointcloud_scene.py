@@ -265,7 +265,9 @@ class PointCloudScene:
                         #labels[i] = "High variance dropped out!"
                         labels[i] = "Ignore"
             else:
-                labels[np.where(min_dists_idx == i)[0][0]] = "Unregistered Object!"              
+                # Catch case more registered objects than percieved objects
+                if (i in min_dists_idx):
+                    labels[np.where(min_dists_idx == i)[0][0]] = "Unregistered Object!"              
 
         for i, obj in enumerate(self.objects_in_scene):
             if labels[i] != "Ignore":
