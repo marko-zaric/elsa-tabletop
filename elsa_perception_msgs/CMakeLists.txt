@@ -34,6 +34,7 @@ add_message_files(
 add_service_files(
   FILES
   SurfaceFeatures.srv
+  Benchmark.srv
 )
 
 ## Generate actions in the 'action' folder

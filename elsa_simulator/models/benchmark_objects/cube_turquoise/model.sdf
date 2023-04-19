@@ -1,24 +1,24 @@
-<?xml version="1.0"?>
+<?xml version="1.0" ?>
 <sdf version="1.5">
-  <model name="cube_7_5cm">
+  <model name="cube_turquoise">
     <link name="link">
-      <pose>0 0 0.0375 0 0 0</pose>
+      <pose>0 0 0.025 0 0 0</pose>
       <inertial>
-        <mass>0.2249</mass>
+        <mass>0.0565</mass>
         <inertia>
-          <ixx>0.00021084374999999999</ixx>
+          <ixx>2.3541666666666672e-05</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.00021084374999999999</iyy>
+          <iyy>2.3541666666666672e-05</iyy>
           <iyz>0</iyz>
-          <izz>0.00021084374999999999</izz>
+          <izz>2.3541666666666672e-05</izz>
         </inertia>
       </inertial>
 
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.075 0.075 0.075</size>
+            <size>0.05 0.05 0.05</size>
           </box>
         </geometry>
         <surface>
@@ -28,10 +28,18 @@
                  http://www.fpl.fs.fed.us/documnts/fplgtr/fplgtr113/ch04.pdf -->
             <poissons_ratio>0.347</poissons_ratio>
             <elastic_modulus>8.8e+09</elastic_modulus>
+            <!--
+            <poissons_ratio>0.495</poissons_ratio>
+            <elastic_modulus>610000.0</elastic_modulus>
+            <poissons_ratio>0.347</poissons_ratio>
+            <elastic_modulus>4400305000.0</elastic_modulus>
+            <poissons_ratio>0.347</poissons_ratio>
+            <elastic_modulus>10000000.0</elastic_modulus>
+            -->
             <ode>
               <kp>100000</kp>
-              <kd>100</kd>
-              <max_vel>100.0</max_vel>
+              <kd>1</kd>
+              <max_vel>1.0</max_vel>
               <min_depth>0.001</min_depth>
             </ode>
           </contact>
@@ -39,7 +47,7 @@
             <torsional>
               <coefficient>1.0</coefficient>
               <use_patch_radius>0</use_patch_radius>
-              <surface_radius>0.01</surface_radius>
+              <surface_radius>0.05</surface_radius>
             </torsional>
           </friction>
         </surface>
@@ -48,18 +56,18 @@
       <visual name="visual">
         <geometry>
           <box>
-            <size>0.075 0.075 0.075</size>
+            <size>0.05 0.05 0.05</size>
           </box>
         </geometry>
-
         <material>
-          <!-- Wheel material -->
-          <ambient>0 0 1 1</ambient>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Turquoise</name>
+          </script>
           <diffuse>0.7 0.7 0.7 1</diffuse>
           <specular>0.01 0.01 0.01 1</specular>
           <emissive>0 0 0 1</emissive>
-        </material> <!-- End wheel material -->
-
+        </material>
       </visual>
 
     </link>

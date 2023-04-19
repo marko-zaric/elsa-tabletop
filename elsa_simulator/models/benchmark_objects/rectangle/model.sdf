@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <sdf version='1.7'>
-  <model name='rectangle1'>
+  <model name='rectangle'>
     <link name='link'>
       <inertial>
         <mass>5</mass>
@@ -28,16 +28,18 @@
         <material>
           <script>
             <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Indigo</name>
+            <name>Gazebo/Yellow</name>
           </script>
-          <shader type='pixel'>
-            <normal_map>__default__</normal_map>
-          </shader>
-          <!-- <ambient>0.3 0.3 0.3 1</ambient> -->
           <diffuse>0.7 0.7 0.7 1</diffuse>
           <specular>0.01 0.01 0.01 1</specular>
           <emissive>0 0 0 1</emissive>
         </material>
+      <!-- <material>
+        <ambient>0 0 0.75 0.9</ambient>
+        <diffuse>0.1 0.1 0.2 1</diffuse>
+        <specular>0.2 0.2 0.2 64</specular>
+        <emissive>0 0 0 1</emissive>
+      </material> -->
         <pose>0 0 0 0 -0 0</pose>
         <transparency>0</transparency>
         <cast_shadows>1</cast_shadows>

@@ -11,7 +11,19 @@ def callback(request):
     with open(path_to_pkg + '/ObjectDatabase.csv', newline='') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=',')
         for row in csv_reader:
-            obj = ObjectRegistration(object_name=row[0], h_value=float(row[1]))
+            if 'Gazebo' in row[2]:
+                obj = ObjectRegistration(object_name=row[0], 
+                                         h_value=float(row[1]), 
+                                         gazebo_color=row[2], 
+                                         r_value=0.0, g_value=0.0, b_value=0.0, alpha_value=0.0)
+            else:
+                obj = ObjectRegistration(object_name=row[0], 
+                                         h_value=float(row[1]), 
+                                         gazebo_color='ambient color', 
+                                         r_value=float(row[2]), 
+                                         g_value=float(row[3]), 
+                                         b_value=float(row[4]), 
+                                         alpha_value=float(row[5]))
             list_registered_objects.append(obj)
     return RegisteredObjectsResponse(list_registered_objects)
 

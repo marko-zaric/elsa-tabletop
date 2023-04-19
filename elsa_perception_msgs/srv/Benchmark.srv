@@ -1,0 +1,6 @@
+int32 number_of_scenes
+int32 number_of_objects
+string object_type 
+bool save_benchmark
+string out_folder
+---
