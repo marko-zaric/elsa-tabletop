@@ -4,3 +4,4 @@ string object_type
 bool save_benchmark
 string out_folder
 ---
+BenchmarkSummary summary

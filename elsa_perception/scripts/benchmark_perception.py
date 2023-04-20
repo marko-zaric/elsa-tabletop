@@ -11,7 +11,7 @@ import numpy as np
 from itertools import product
 import random
 import copy
-from elsa_perception_msgs.msg import PhysicalScene
+from elsa_perception_msgs.msg import PhysicalScene, BenchmarkSummary, BenchmarkErrorMetrics, BenchmarkErrorDimension
 import csv
 from datetime import datetime
 from rospkg import RosPack
@@ -288,27 +288,34 @@ class BenchmarkPerception:
         error_dict['round_error'].append(gt_round-round_percept)
 
     def calculate_error_metrics(self):
-        print("--- Total errors ---")
-        self.print_metrics(self.total_errors)
-        print("--- Error by quadrant ---")
+        benchmark_summary = BenchmarkSummary()
+        benchmark_summary.total_error = self.get_error_metrics(self.total_errors,'total_error')
+        benchmark_summary.quadrant_errors = []
         for quadrant in self.quadrant_errors:
-            print("#", quadrant)
-            self.print_metrics(self.quadrant_errors[quadrant])
-        print("--- Error by color ---")
+            benchmark_summary.quadrant_errors.append(self.get_error_metrics(self.quadrant_errors[quadrant],"Quadrant "+quadrant))
+        benchmark_summary.color_errors = []
         for color in self.color_errors:
-            print("#", color)
-            self.print_metrics(self.color_errors[color])
+            benchmark_summary.color_errors.append(self.get_error_metrics(self.color_errors[color], color))
+        return benchmark_summary
 
     @staticmethod
-    def print_metrics(error_dict):
+    def get_error_metrics(error_dict, domain_name):
+        error_metrics = BenchmarkErrorMetrics()
+        error_metrics.domain_name = domain_name
+        error_metrics.error_dimensions = []
+        error_metrics.reached_in_benchmark = True
         for error_dimension in error_dict:
-            print("----" + error_dimension + "----")
+            error_dim_msg = BenchmarkErrorDimension()
+            error_dim_msg.error_dimension = error_dimension
             if error_dict[error_dimension] == []:
-                continue
-            print("mean:", np.mean(np.array(error_dict[error_dimension])))
-            print("std:", np.std(np.array(error_dict[error_dimension])))
-            print("max:", np.max(np.array(error_dict[error_dimension])))
-            print("min:", np.min(np.array(error_dict[error_dimension])))
+                error_metrics.reached_in_benchmark = False
+                break
+            error_dim_msg.mean = np.mean(np.array(error_dict[error_dimension]))
+            error_dim_msg.std = np.std(np.array(error_dict[error_dimension]))
+            error_dim_msg.min = np.min(np.array(error_dict[error_dimension]))
+            error_dim_msg.max = np.max(np.array(error_dict[error_dimension]))
+            error_metrics.error_dimensions.append(error_dim_msg)
+        return error_metrics
 
 def callback(request):
     benchmark_node = BenchmarkPerception(request.number_of_scenes, 
@@ -330,7 +337,8 @@ def callback(request):
         rospy.loginfo('Scene over')
     if benchmark_node.save_benchmark:
         benchmark_node.csv_file.close()
-    benchmark_node.calculate_error_metrics()
+    benchmark_summary = BenchmarkSummary()
+    benchmark_summary = benchmark_node.calculate_error_metrics()
     # rospy.loginfo("Total Errors")
     # pp = pprint.PrettyPrinter(indent=2)
     # pp.pprint(benchmark_node.total_errors)
@@ -338,7 +346,7 @@ def callback(request):
     # pp.pprint(benchmark_node.quadrant_errors)
     # rospy.loginfo("Color Errors")
     # pp.pprint(benchmark_node.color_errors)
-    return BenchmarkResponse()
+    return BenchmarkResponse(benchmark_summary)
 
 
         
