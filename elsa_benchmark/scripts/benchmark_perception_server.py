@@ -15,31 +15,25 @@ from elsa_perception_msgs.msg import PhysicalScene, BenchmarkSummary, BenchmarkE
 import csv
 from datetime import datetime
 from rospkg import RosPack
-from perception.randomize_sdf import RandomizeSDF
-from elsa_perception_msgs.srv import Benchmark, BenchmarkResponse
+from perception.sdf_modifier import SDFmodifier
+from elsa_benchmark.srv import Benchmark, BenchmarkResponse
 import pandas as pd
 import pprint 
 from elsa_object_database.srv import RegisteredObjects
 
 class BenchmarkPerception:
     def __init__(self, number_of_scenes=1, number_of_objects=1, object_type='cube', save_benchmark=False, out_folder='/home/marko/benchmark/'):
-        rospy.loginfo(number_of_scenes)
-        rospy.loginfo(number_of_objects)
-        rospy.loginfo(object_type)
-        rospy.loginfo(save_benchmark)
-        rospy.loginfo(out_folder)
         self.number_of_scenes = number_of_scenes
         self.number_of_objects = number_of_objects
         self.object = object_type
         self.save_benchmark = save_benchmark
         # benchmark results
         if save_benchmark:
-            rospy.loginfo("In")
             datetime_stamp = str(datetime.now())
             self.filename = out_folder + object_type + "_" + datetime_stamp + '.csv'
             self.csv_file = open(self.filename, 'w')
             self.csv_writer = csv.writer(self.csv_file)
-            self.csv_writer.writerow(['scene', 'object', 'gt_x', 'gt_y', 'gt_z', 'gt_phi', 'gt_dx', 'gt_dy', 'gt_dz', 'x', 'y', 'z', 'phi', 'dx', 'dy', 'dz', 'gt_round', 'round'])  
+            self.csv_writer.writerow(['scene', 'object_color', 'object_type', 'gt_x', 'gt_y', 'gt_z', 'gt_phi', 'gt_dx', 'gt_dy', 'gt_dz', 'x', 'y', 'z', 'phi', 'dx', 'dy', 'dz', 'gt_round', 'round'])  
 
         self.scene = None
         self.SCENE_OBSERVED = 0
@@ -49,11 +43,11 @@ class BenchmarkPerception:
         self.color = None
         self.bounding_box = None 
         self.is_round = None
-        rospy.loginfo("Pose init")
+
         self.rp = RosPack()
-        rospy.loginfo("RosPack init")
-        self.sdf_randomizer = RandomizeSDF()
-        rospy.loginfo("randomizer init")
+
+        self.sdf_randomizer = SDFmodifier()
+
         self.OBJECT_LIST = ["cube", "rectangle", "sphere", "cylinder"]
 
         # self.OBJ_DIMENSIONS = {'can':[0.06701,0.06701, 0.1239],
@@ -162,7 +156,7 @@ class BenchmarkPerception:
         except rospy.ServiceException as e:
             rospy.logerr('Spawn model service call failed: {0}'.format(e))
         out_msg = 'Model spawned ' + self.color
-        # rospy.loginfo(out_msg)
+        rospy.loginfo(out_msg)
 
     def delete_models(self):
         try:
@@ -172,12 +166,7 @@ class BenchmarkPerception:
         for name in resp_world.model_names:
             if 'Object' in name:
                 try:
-                    # while True:
-                    resp_delete = self.model_remover(name)
-                    # rospy.loginfo(resp_delete.status_message)
-                        # if resp_delete.success == True:
-                        #     break
-                        # rospy.sleep(1.0)            
+                    resp_delete = self.model_remover(name)          
                 except rospy.ServiceException as e:
                     rospy.logerr('Delete model service call failed: {0}'.format(e))
         rospy.loginfo('Models deleted')
@@ -189,11 +178,12 @@ class BenchmarkPerception:
         for i in range(self.number_of_objects):
             self.spawn_model(self.object)
             new_poses[self.color] = {"pose": copy.deepcopy(self.pose), 
-                               "z_angle":  copy.deepcopy(self.z_euler_angle), 
-                            #    "color": copy.deepcopy(self.color),
-                               "is_round": copy.deepcopy(self.is_round),
-                               "bounding_box": copy.deepcopy(self.bounding_box)}
+                                "z_angle":  copy.deepcopy(self.z_euler_angle), 
+                                "object_type": copy.deepcopy(self.object),
+                                "is_round": copy.deepcopy(self.is_round),
+                                "bounding_box": copy.deepcopy(self.bounding_box)}
         self.SCENE_OBSERVED = 0
+        rospy.sleep(1)
         return new_poses
         
     def store_data(self, new_poses, scene_count):
@@ -204,50 +194,57 @@ class BenchmarkPerception:
             rospy.logwarn("No objects where observed!")
         else:
             rospy.loginfo("Observed objects: " + str(len(observed_scene)))
-            df = pd.DataFrame(columns=['scene', 'object', 'gt_x', 'gt_y', 'gt_z', 'gt_phi', 'gt_dx', 'gt_dy', 'gt_dz', 'x', 'y', 'z', 'phi', 'dx', 'dy', 'dz', 'gt_round', 'round'])
-            for obj in observed_scene:
-                #color_label = obj.obj_identity.split(" ")[0].lower()
-                # Find object in new poses
-                GT_object = None
-                genarated_object = None
-                for gen_obj in new_poses:
-                    if obj.obj_identity == gen_obj:
-                        genarated_object = gen_obj
-                        GT_object = new_poses[gen_obj]
+            df = pd.DataFrame(columns=['scene', 'object_color', 'object_type', 'gt_x', 'gt_y', 'gt_z', 'gt_phi', 'gt_dx', 'gt_dy', 'gt_dz', 'x', 'y', 'z', 'phi', 'dx', 'dy', 'dz', 'gt_round', 'round'])
+            for genarated_object in new_poses:
+                # Match generated object with percived object by color identity
+                perceived_object = None
+                GT_object = new_poses[genarated_object]
+                for obj in observed_scene:
+                    
+                    print(obj.obj_identity)
+
+                    if obj.obj_identity == genarated_object:
+                        perceived_object = obj
 
                 # check if obj should be round
-                print(GT_object)
-                gt_round = 0
-                print(genarated_object)      
-                if GT_object['is_round'] == True:
-                    angle = 0.0
-                    gt_round = 1
+                    gt_round = 0     
+                    if GT_object['is_round'] == True:
+                        angle = 0.0
+                        gt_round = 1
+                    else:
+                        angle = GT_object['z_angle']
+                    round_percept = ''
+
+                if perceived_object is None:
+                    if self.save_benchmark:
+                        # write result to csv
+                        self.csv_writer.writerow([scene_count, genarated_object, GT_object['object_type'], GT_object['pose'].position.x, GT_object['pose'].position.y, GT_object['pose'].position.z,
+                            angle, GT_object['bounding_box'][0], GT_object['bounding_box'][1], 
+                                            GT_object['bounding_box'][2], '', '', '', '', '', '', '', gt_round, ''])   
+                    else:
+                        df.loc[len(df)] = [scene_count, genarated_object, GT_object['object_type'], GT_object['pose'].position.x, GT_object['pose'].position.y, GT_object['pose'].position.z,
+                                        angle, GT_object['bounding_box'][0], GT_object['bounding_box'][1], 
+                                        GT_object['bounding_box'][2], '', '', '', '', '', '', '', gt_round, '']
                 else:
-                    angle = GT_object['z_angle']
-                # check if object was percieved as a round object
-                round_percept = 0
-                if obj.spatial_features.phi == 0.0:
-                   round_percept = 1
-                
-                # select GT (ground truth) dimensions
-                # GT_dimensions = None
-                # for dims_key in self.OBJ_DIMENSIONS:
-                #     if dims_key in genarated_object:
-                #         GT_dimensions = self.OBJ_DIMENSIONS[dims_key]
-                #         break
-                if self.save_benchmark:
-                    # write result to csv
-                    self.csv_writer.writerow([scene_count, genarated_object, GT_object['pose'].position.x, GT_object['pose'].position.y, GT_object['pose'].position.z,
+                    
+                    # check if object was percieved as a round object
+                    round_percept = 0
+                    if perceived_object.spatial_features.phi == 0.0:
+                       round_percept = 1
+
+                    if self.save_benchmark:
+                        # write result to csv
+                        self.csv_writer.writerow([scene_count, genarated_object, GT_object['object_type'], GT_object['pose'].position.x, GT_object['pose'].position.y, GT_object['pose'].position.z,
+                                            angle, GT_object['bounding_box'][0], GT_object['bounding_box'][1], 
+                                            GT_object['bounding_box'][2], perceived_object.spatial_features.x, perceived_object.spatial_features.y, perceived_object.spatial_features.z,
+                                            perceived_object.spatial_features.phi, perceived_object.spatial_features.dx, perceived_object.spatial_features.dy, perceived_object.spatial_features.dz, gt_round, round_percept])   
+                    else:
+                        df.loc[len(df)] = [scene_count, genarated_object, GT_object['object_type'], GT_object['pose'].position.x, GT_object['pose'].position.y, GT_object['pose'].position.z,
                                         angle, GT_object['bounding_box'][0], GT_object['bounding_box'][1], 
                                         GT_object['bounding_box'][2], obj.spatial_features.x, obj.spatial_features.y, obj.spatial_features.z,
-                                        obj.spatial_features.phi, obj.spatial_features.dx, obj.spatial_features.dy, obj.spatial_features.dz, gt_round, round_percept])   
-                else:
-                    df.loc[len(df)] = [scene_count, genarated_object, GT_object['pose'].position.x, GT_object['pose'].position.y, GT_object['pose'].position.z,
-                                    angle, GT_object['bounding_box'][0], GT_object['bounding_box'][1], 
-                                    GT_object['bounding_box'][2], obj.spatial_features.x, obj.spatial_features.y, obj.spatial_features.z,
-                                    obj.spatial_features.phi, obj.spatial_features.dx, obj.spatial_features.dy, obj.spatial_features.dz, gt_round, round_percept]
+                                        obj.spatial_features.phi, obj.spatial_features.dx, obj.spatial_features.dy, obj.spatial_features.dz, gt_round, round_percept]
                 
-                self.update_eval_metrics(genarated_object, GT_object, angle, obj, gt_round, round_percept)
+                self.update_eval_metrics(genarated_object, GT_object, angle, perceived_object, gt_round, round_percept)
             print(df)
 
     def update_eval_metrics(self, object_name, gt_obj, gt_angle, obj_percept, gt_round, round_percept):
@@ -267,6 +264,9 @@ class BenchmarkPerception:
         self.add_to_error_dict(self.color_errors[object_name], gt_obj, gt_angle, obj_percept, gt_round, round_percept)
 
     def add_to_error_dict(self, error_dict, gt_obj, gt_angle, obj_percept, gt_round, round_percept):
+        if obj_percept is None:
+            return
+        
         error_dict['x_error'].append(gt_obj['pose'].position.x - obj_percept.spatial_features.x)
         error_dict['y_error'].append(gt_obj['pose'].position.y - obj_percept.spatial_features.y)
         
@@ -325,11 +325,11 @@ def callback(request):
                                          request.out_folder)
     rospy.loginfo('Perception Benchmarking with %d scenarios' % (benchmark_node.number_of_scenes))
     # evaluation loop
-    scene = 0
+    scene = 1
     while not rospy.is_shutdown() and scene < benchmark_node.number_of_scenes:  
         rospy.logwarn('---------------------')
-        rospy.loginfo('Scene: {0}'.format(scene+1))
-        benchmark_node.sdf_randomizer = RandomizeSDF()
+        rospy.loginfo('Scene: {0}'.format(scene))
+        benchmark_node.sdf_randomizer = SDFmodifier()
         GT_poses = benchmark_node.new_scene()
         rospy.loginfo('New scene created')
         benchmark_node.store_data(GT_poses, scene)
@@ -339,13 +339,7 @@ def callback(request):
         benchmark_node.csv_file.close()
     benchmark_summary = BenchmarkSummary()
     benchmark_summary = benchmark_node.calculate_error_metrics()
-    # rospy.loginfo("Total Errors")
-    # pp = pprint.PrettyPrinter(indent=2)
-    # pp.pprint(benchmark_node.total_errors)
-    # rospy.loginfo("Quadrant Errors")
-    # pp.pprint(benchmark_node.quadrant_errors)
-    # rospy.loginfo("Color Errors")
-    # pp.pprint(benchmark_node.color_errors)
+    rospy.loginfo("All {0} scenes are done.".format(scene))
     return BenchmarkResponse(benchmark_summary)
 
 
@@ -353,34 +347,10 @@ def callback(request):
 def start_benchmarking_server():
     rospy.init_node('elsa_perception_benchmark') 
     rate = rospy.Rate(100)
-    service = rospy.Service('perception_benchmark', Benchmark, callback)
+    service = rospy.Service('benchmark/perception_benchmark', Benchmark, callback)
     rospy.loginfo("Benchmarking service ready")
     rospy.spin()
 
 
 if __name__ == '__main__':
     start_benchmarking_server()       
-
-
-# if __name__ == '__main__':
-    
-#     benchmark_node = BenchmarkPerception()
-#     rospy.loginfo('Perception Benchmarking with %d scenarios' % (benchmark_node.number_of_scenes))
-#     # evaluation loop
-#     scene = 0
-#     while not rospy.is_shutdown() and scene < benchmark_node.number_of_scenes:  
-#         rospy.logwarn('---------------------')
-#         rospy.loginfo('Scene: {0}'.format(scene+1))
-#         benchmark_node.sdf_randomizer = RandomizeSDF()
-#         GT_poses = benchmark_node.new_scene()
-#         rospy.loginfo('New scene created')
-#         benchmark_node.store_data(GT_poses, scene)
-#         scene += 1
-#         rospy.loginfo('Scene over')
-#     benchmark_node.csv_file.close()
-
-#     # Evaluate collected data
-#     benchmark_evaluation = BenchmarkEvaluation(benchmark_node.filename)
-#     benchmark_evaluation.evaluate()
-
-#     rospy.loginfo('Done.')

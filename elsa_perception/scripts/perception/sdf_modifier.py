@@ -5,11 +5,10 @@ from elsa_object_database.srv import RegisteredObjects
 import random
 
 
-class RandomizeSDF:
+class SDFmodifier:
     def __init__(self):
         rospy.loginfo("Waiting for get_registered_obj_service")
         rospy.wait_for_service("get_registered_obj_service")
-        rospy.loginfo("Found it")
         self.registered_objs = []
         try:
             get_registered_objs = rospy.ServiceProxy("get_registered_obj_service", RegisteredObjects)
@@ -18,6 +17,63 @@ class RandomizeSDF:
                 self.registered_objs.append([obj.object_name, obj.gazebo_color, obj.r_value, obj.g_value, obj.b_value, obj.alpha_value])
         except rospy.ServiceException as e:
             print("Registered Objects Service failed %s", e)
+
+    def set_color(self, sdf_xml, color):
+        stringroot = ET.fromstring(sdf_xml)
+        for material in stringroot.iter('material'):
+            ambient = material.find('ambient')
+            script = material.find('script')
+
+            #remove present color tags
+            if ambient is not None:
+                material.remove(ambient)
+            if script is not None:
+                material.remove(script)
+
+            color_info = None
+            for reg_obj in self.registered_objs:
+                if color == reg_obj[0]:
+                    color_info = reg_obj
+                    break
+            
+            color_tag = self.build_new_color_tag(color_info)
+            material.insert(0, color_tag)
+
+        return ET.tostring(stringroot, encoding='unicode', method='xml')
+
+    def set_size(self, sdf_xml, size):
+        x = size[0]
+        y = size[1]
+        z = size[2]
+        
+        stringroot = ET.fromstring(sdf_xml)
+        model_name = stringroot.find('./model').attrib['name']
+
+        for geometry in stringroot.iter('geometry'):
+            box = geometry.find('box')
+            sphere = geometry.find('sphere')
+            cylinder = geometry.find('cylinder')
+
+            if model_name == 'rectangle':
+                size = box.find('size')
+                size.text = str(x) + ' ' + str(y) + ' ' + str(z)
+            elif model_name == 'cube':
+                size = box.find('size')
+                size.text = str(x) + ' ' + str(y) + ' ' + str(z)
+            elif model_name == 'sphere':
+                radius = sphere.find('radius')
+                r = x/2
+                radius.text = str(r)
+            elif model_name == 'cylinder':
+                r = x/2
+                l = z
+                radius = cylinder.find('radius')
+                length = cylinder.find('length')
+                radius.text = str(r)
+                length.text = str(l)
+                
+
+        return ET.tostring(stringroot, encoding='unicode', method='xml')
 
     def randomize_color(self, sdf_xml):
         stringroot = ET.fromstring(sdf_xml)

@@ -1,0 +1,3 @@
+string domain_name
+bool reached_in_benchmark
+BenchmarkErrorDimension[] error_dimensions

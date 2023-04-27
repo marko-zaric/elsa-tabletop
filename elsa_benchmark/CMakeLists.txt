@@ -1,32 +1,62 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(elsa_perception)
+project(elsa_benchmark)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  elsa_perception_msgs
-  roscpp
-  rospy
   std_msgs
+  sensor_msgs
+  message_generation
 )
-
-find_package (OpenCV 4.0.0 REQUIRED)
-find_package(PCL 1.2 REQUIRED)
-
-catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
 
+## Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  BenchmarkErrorMetrics.msg
+  BenchmarkSummary.msg
+  BenchmarkErrorDimension.msg
+)
+
+## Generate services in the 'srv' folder
+add_service_files(
+  FILES
+  Benchmark.srv
+  SpawnScene.srv 
+  ClearObjectsFromScene.srv
+)
+
+## Generate actions in the 'action' folder
+# add_action_files(
+#   FILES
+#   Action1.action
+#   Action2.action
+# )
+
+## Generate added messages and services with any dependencies listed here
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  sensor_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
+
+## To declare and build dynamic reconfigure parameters within this
+## package, follow these steps:
+## * In the file package.xml:
+##   * add a build_depend and a exec_depend tag for "dynamic_reconfigure"
+## * In this file (CMakeLists.txt):
+##   * add "dynamic_reconfigure" to
+##     find_package(catkin REQUIRED COMPONENTS ...)
+##   * uncomment the "generate_dynamic_reconfigure_options" section below
+##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 # generate_dynamic_reconfigure_options(
@@ -37,13 +67,17 @@ catkin_python_setup()
 ###################################
 ## catkin specific configuration ##
 ###################################
-
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if your package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  CATKIN_DEPENDS
-    roscpp
-    rospy
-    elsa_perception_msgs
-    std_msgs
+#  INCLUDE_DIRS include
+#  LIBRARIES iis_perception_msg
+#  CATKIN_DEPENDS std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -55,17 +89,11 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
 )
-
-## PC C++ Nodes
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/iis_perception.cpp
+#   src/${PROJECT_NAME}/iis_perception_msg.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -76,9 +104,7 @@ add_definitions(${PCL_DEFINITIONS})
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(test_subscribe_point_cloud src/test_sub_pc.cpp)
-add_executable(save_point_cloud src/save_point_cloud.cpp)
-add_executable(surface_feature_service src/surface_features_service.cpp)
+# add_executable(${PROJECT_NAME}_node src/iis_perception_msg_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -91,9 +117,9 @@ add_executable(surface_feature_service src/surface_features_service.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(test_subscribe_point_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-target_link_libraries(save_point_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-target_link_libraries(surface_feature_service ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
+# target_link_libraries(${PROJECT_NAME}_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -105,14 +131,9 @@ target_link_libraries(surface_feature_service ${catkin_LIBRARIES} ${PCL_LIBRARIE
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-                      # PERCEPTION
-                      scripts/node_gazebo_read_camera.py 
-                      # TESTS
-                      scripts/test_point_cloud.py
-                      scripts/test_bounding_boxes.py
-                      scripts/test_surface_normals.py
-                      scripts/node_read_camera.py
-                      scripts/node_test_cube_dimensions.py
+                      scripts/benchmark_perception_server.py
+                      scripts/spawn_specific_scene_server.py
+                      scripts/clear_scene_server.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark executables for installation
@@ -148,7 +169,7 @@ catkin_install_python(PROGRAMS
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_iis_perception.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_iis_perception_msg.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
