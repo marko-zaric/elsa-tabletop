@@ -24,4 +24,6 @@
     <param name="register_objects" value="$(arg register_objects)"/>
   </node>
   
+  <node pkg="elsa_perception" type="node_gazebo_rviz_markers.py" name="elsa_perception_rviz_markers"/>
+
 </launch>

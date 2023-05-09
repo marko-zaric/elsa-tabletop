@@ -27,9 +27,11 @@ class SpawnBenchmarkScene:
             print(obj['object_color'])
             file_sdf = open(join(self.rp.get_path('elsa_simulator'),'models/benchmark_objects', obj['object_type'], 'model.sdf'))
             model_sdf = file_sdf.read()
+            rospy.logerr(join(self.rp.get_path('elsa_simulator'),'models/benchmark_objects', obj['object_type'], 'model.sdf'))
+            rospy.logerr(model_sdf)
             file_sdf.close()
-            model_sdf = self.sdf_modifier.set_color(model_sdf, obj['object_color'])
-            model_sdf = self.sdf_modifier.set_size(model_sdf, [obj['gt_dx'], obj['gt_dy'], obj['gt_dz']])
+            # model_sdf = self.sdf_modifier.set_color(model_sdf, obj['object_color'])
+            # model_sdf = self.sdf_modifier.set_size(model_sdf, [obj['gt_dx'], obj['gt_dy'], obj['gt_dz']])
 
             pose = Pose()
             pose.position.x = obj['gt_x']

@@ -1,3 +1,0 @@
-BenchmarkErrorMetrics total_error 
-BenchmarkErrorMetrics[] quadrant_errors 
-BenchmarkErrorMetrics[] color_errors

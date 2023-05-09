@@ -20,6 +20,7 @@ add_message_files(
   BenchmarkErrorMetrics.msg
   BenchmarkSummary.msg
   BenchmarkErrorDimension.msg
+  MaxError.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -134,6 +135,7 @@ catkin_install_python(PROGRAMS
                       scripts/benchmark_perception_server.py
                       scripts/spawn_specific_scene_server.py
                       scripts/clear_scene_server.py
+                      scripts/spawn_model.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark executables for installation

@@ -107,7 +107,7 @@
   <include file="$(find elsa_simulator)/launch/gazebo_perception.launch"/>
 
   <!-- Benchmark Services  -->
-  <node pkg="elsa_benchmark" type="benchmark_perception_server.py" name="benchmark_perception_server"/>
+  <!-- <node pkg="elsa_benchmark" type="benchmark_perception_server.py" name="benchmark_perception_server"/> -->
   <node pkg="elsa_benchmark" type="clear_scene_server.py" name="clear_scene_server"/>
   <node pkg="elsa_benchmark" type="spawn_specific_scene_server.py" name="spawn_specific_scene_server"/>
 

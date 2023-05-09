@@ -107,12 +107,13 @@ target_link_libraries(surface_feature_service ${catkin_LIBRARIES} ${PCL_LIBRARIE
 catkin_install_python(PROGRAMS
                       # PERCEPTION
                       scripts/node_gazebo_read_camera.py 
+                      scripts/node_read_camera.py
                       # TESTS
                       scripts/test_point_cloud.py
                       scripts/test_bounding_boxes.py
                       scripts/test_surface_normals.py
-                      scripts/node_read_camera.py
                       scripts/node_test_cube_dimensions.py
+                      scripts/node_gazebo_rviz_markers.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark executables for installation

@@ -1,8 +1,7 @@
 import xml.etree.ElementTree as ET
-import rospkg as rp
+# import rospkg as rp
 import rospy
 from elsa_object_database.srv import RegisteredObjects
-import random
 
 
 class SDFmodifier:
@@ -75,7 +74,7 @@ class SDFmodifier:
 
         return ET.tostring(stringroot, encoding='unicode', method='xml')
 
-    def randomize_color(self, sdf_xml):
+    def randomize_color(self, sdf_xml, rand_instance):
         stringroot = ET.fromstring(sdf_xml)
         for material in stringroot.iter('material'):
             ambient = material.find('ambient')
@@ -88,7 +87,7 @@ class SDFmodifier:
                 material.remove(script)
             
             # Select random color
-            color = random.choice(self.registered_objs)
+            color = rand_instance.choice(self.registered_objs)
             self.registered_objs.remove(color)
             color_name = color[0]
 
@@ -98,22 +97,22 @@ class SDFmodifier:
         return color_name, ET.tostring(stringroot, encoding='unicode', method='xml')
         
 
-    def randomize_size(self, sdf_xml):
+    def randomize_size(self, sdf_xml, rand_instance):
         stringroot = ET.fromstring(sdf_xml)
         model_name = stringroot.find('./model').attrib['name']
 
         min_size = 4
         if model_name == 'rectangle':
-            x = (random.random() + random.randint(min_size, 8)) / 100
-            y = (random.random() + random.randint(min_size, 8)) / 100
-            z = (random.random() + random.randint(min_size, 8)) / 100
+            x = (rand_instance.random() + rand_instance.randint(min_size, 8)) / 100
+            y = (rand_instance.random() + rand_instance.randint(min_size, 8)) / 100
+            z = (rand_instance.random() + rand_instance.randint(min_size, 8)) / 100
         elif model_name == 'cube':
-            x = (random.random() + random.randint(min_size, 8)) / 100
+            x = (rand_instance.random() + rand_instance.randint(min_size, 8)) / 100
         elif model_name == 'sphere':
-            r = (random.random() + random.randint(min_size,7)) / 100
+            r = (rand_instance.random() + rand_instance.randint(min_size,7)) / 100
         elif model_name == 'cylinder':
-            r = (random.random() + random.randint(min_size,7)) / 100
-            l = (random.random() + random.randint(min_size,10)) / 100
+            r = (rand_instance.random() + rand_instance.randint(min_size,7)) / 100
+            l = (rand_instance.random() + rand_instance.randint(min_size,10)) / 100
         
         for geometry in stringroot.iter('geometry'):
             box = geometry.find('box')

@@ -28,9 +28,6 @@ add_message_files(
   SocialFeatures.msg
   FullSceneStamped.msg
   ClusteredPointcloud.msg
-  BenchmarkErrorMetrics.msg
-  BenchmarkSummary.msg
-  BenchmarkErrorDimension.msg
 )
 
 ## Generate services in the 'srv' folder

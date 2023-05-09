@@ -1,24 +1,23 @@
-import rospy
-import xacro
-from geometry_msgs.msg import Pose
-from gazebo_msgs.srv import SpawnModel, DeleteModel, GetWorldProperties
-# import argparse
 import numpy as np
 import random
+import rospy
+import xacro
 from os.path import join
 from scipy.spatial.transform import Rotation
 import numpy as np
 from itertools import product
-import random
 import copy
-from elsa_perception_msgs.msg import PhysicalScene, BenchmarkSummary, BenchmarkErrorMetrics, BenchmarkErrorDimension
 import csv
 from datetime import datetime
-from rospkg import RosPack
-from perception.sdf_modifier import SDFmodifier
-from elsa_benchmark.srv import Benchmark, BenchmarkResponse
 import pandas as pd
 import pprint 
+from rospkg import RosPack
+from perception.sdf_modifier import SDFmodifier
+from geometry_msgs.msg import Pose
+from gazebo_msgs.srv import SpawnModel, DeleteModel, GetWorldProperties
+from elsa_perception_msgs.msg import PhysicalScene
+from elsa_benchmark.srv import Benchmark, BenchmarkResponse
+from elsa_benchmark.msg import BenchmarkSummary, BenchmarkErrorMetrics, BenchmarkErrorDimension, MaxError
 from elsa_object_database.srv import RegisteredObjects
 
 class BenchmarkPerception:
@@ -27,6 +26,10 @@ class BenchmarkPerception:
         self.number_of_objects = number_of_objects
         self.object = object_type
         self.save_benchmark = save_benchmark
+        self.filename = 'Not stored'
+
+        self.rand = random.Random(4242)
+        np.random.seed(1)
         # benchmark results
         if save_benchmark:
             datetime_stamp = str(datetime.now())
@@ -93,6 +96,8 @@ class BenchmarkPerception:
         for reg_obj in registered_objects.registered_objects:
             self.color_errors[reg_obj.object_name] = copy.deepcopy(self.total_errors)
 
+        self.total_errors['all_objs_detected'] = []
+
     def read_camera(self, msg):
         self.scene = msg.physical_scene
         self.SCENE_OBSERVED += 1
@@ -125,12 +130,12 @@ class BenchmarkPerception:
         return model_xacro.toxml(), new_opts
 
     def randomize_model_pose(self):
-        xy = random.choice(self.XY_GRID_use)
+        xy = self.rand.choice(self.XY_GRID_use)
         self.XY_GRID_use.pop(self.XY_GRID_use.index(xy))
         
         self.pose.position.x = xy[0]
         self.pose.position.y = xy[1]
-        self.pose.position.z = 1.15
+        self.pose.position.z = 1.03
 
         self.z_euler_angle = np.random.uniform(0.0, np.pi)
         rotation = Rotation.from_euler('xyz', [0.0, 0.0, self.z_euler_angle])
@@ -147,8 +152,8 @@ class BenchmarkPerception:
         file_sdf = open(join(self.rp.get_path('elsa_simulator'),'models/benchmark_objects', model_name, 'model.sdf'))
         model_sdf = file_sdf.read()
         file_sdf.close()
-        self.color, model_sdf = self.sdf_randomizer.randomize_color(model_sdf)
-        self.bounding_box, model_sdf, self.is_round = self.sdf_randomizer.randomize_size(model_sdf)
+        self.color, model_sdf = self.sdf_randomizer.randomize_color(model_sdf, self.rand)
+        self.bounding_box, model_sdf, self.is_round = self.sdf_randomizer.randomize_size(model_sdf, self.rand)
         
         self.randomize_model_pose()
         try:
@@ -174,6 +179,7 @@ class BenchmarkPerception:
     def new_scene(self):
         new_poses = dict()
         self.delete_models()
+        rospy.sleep(1)
         self.XY_GRID_use = copy.copy(self.XY_GRID)
         for i in range(self.number_of_objects):
             self.spawn_model(self.object)
@@ -183,13 +189,13 @@ class BenchmarkPerception:
                                 "is_round": copy.deepcopy(self.is_round),
                                 "bounding_box": copy.deepcopy(self.bounding_box)}
         self.SCENE_OBSERVED = 0
-        rospy.sleep(1)
         return new_poses
         
     def store_data(self, new_poses, scene_count):
         while self.SCENE_OBSERVED < 3:
             rospy.sleep(1.0)
         observed_scene = self.scene
+        all_objects_detected = True
         if len(observed_scene) == 0:
             rospy.logwarn("No objects where observed!")
         else:
@@ -216,6 +222,7 @@ class BenchmarkPerception:
                     round_percept = ''
 
                 if perceived_object is None:
+                    all_objects_detected = False
                     if self.save_benchmark:
                         # write result to csv
                         self.csv_writer.writerow([scene_count, genarated_object, GT_object['object_type'], GT_object['pose'].position.x, GT_object['pose'].position.y, GT_object['pose'].position.z,
@@ -244,10 +251,14 @@ class BenchmarkPerception:
                                         GT_object['bounding_box'][2], obj.spatial_features.x, obj.spatial_features.y, obj.spatial_features.z,
                                         obj.spatial_features.phi, obj.spatial_features.dx, obj.spatial_features.dy, obj.spatial_features.dz, gt_round, round_percept]
                 
-                self.update_eval_metrics(genarated_object, GT_object, angle, perceived_object, gt_round, round_percept)
+                self.update_eval_metrics(genarated_object, GT_object, angle, perceived_object, gt_round, round_percept, all_objects_detected)
+                if all_objects_detected == True:
+                    self.total_errors['all_objs_detected'].append(True)
+                else:
+                    self.total_errors['all_objs_detected'].append(False)
             print(df)
 
-    def update_eval_metrics(self, object_name, gt_obj, gt_angle, obj_percept, gt_round, round_percept):
+    def update_eval_metrics(self, object_name, gt_obj, gt_angle, obj_percept, gt_round, round_percept, all_objects_detected):
         self.add_to_error_dict(self.total_errors, gt_obj, gt_angle, obj_percept, gt_round, round_percept)
 
         # Add to correct quadrant
@@ -289,13 +300,16 @@ class BenchmarkPerception:
 
     def calculate_error_metrics(self):
         benchmark_summary = BenchmarkSummary()
+        benchmark_summary.worst_scenes_per_dimension = self.worst_error_per_dimension(self.total_errors)
         benchmark_summary.total_error = self.get_error_metrics(self.total_errors,'total_error')
+        benchmark_summary.all_objects_detected = self.total_errors['all_objs_detected']
         benchmark_summary.quadrant_errors = []
         for quadrant in self.quadrant_errors:
             benchmark_summary.quadrant_errors.append(self.get_error_metrics(self.quadrant_errors[quadrant],"Quadrant "+quadrant))
         benchmark_summary.color_errors = []
         for color in self.color_errors:
             benchmark_summary.color_errors.append(self.get_error_metrics(self.color_errors[color], color))
+        benchmark_summary.out_file = self.filename
         return benchmark_summary
 
     @staticmethod
@@ -316,6 +330,21 @@ class BenchmarkPerception:
             error_dim_msg.max = np.max(np.array(error_dict[error_dimension]))
             error_metrics.error_dimensions.append(error_dim_msg)
         return error_metrics
+    
+    @staticmethod
+    def worst_error_per_dimension(error_dict):
+        max_errors = []
+        for key in error_dict:
+            if key == 'all_objs_detected':
+                continue
+            max_error_msg = MaxError()
+            max_error_msg.dimension = key 
+            idx_max_error = np.argmax(np.abs(error_dict[key]))
+            max_error_msg.error_value = error_dict[key][idx_max_error]
+            max_error_msg.scene = idx_max_error + 1 #returns the scene with the highest error value
+            max_errors.append(max_error_msg)
+        return max_errors
+
 
 def callback(request):
     benchmark_node = BenchmarkPerception(request.number_of_scenes, 
@@ -325,21 +354,22 @@ def callback(request):
                                          request.out_folder)
     rospy.loginfo('Perception Benchmarking with %d scenarios' % (benchmark_node.number_of_scenes))
     # evaluation loop
-    scene = 1
+    scene = 0
     while not rospy.is_shutdown() and scene < benchmark_node.number_of_scenes:  
         rospy.logwarn('---------------------')
-        rospy.loginfo('Scene: {0}'.format(scene))
+        rospy.logwarn('Scene: {0}'.format(scene + 1))
         benchmark_node.sdf_randomizer = SDFmodifier()
         GT_poses = benchmark_node.new_scene()
+        rospy.sleep(2)
         rospy.loginfo('New scene created')
-        benchmark_node.store_data(GT_poses, scene)
+        benchmark_node.store_data(GT_poses, scene+1)
         scene += 1
         rospy.loginfo('Scene over')
     if benchmark_node.save_benchmark:
         benchmark_node.csv_file.close()
     benchmark_summary = BenchmarkSummary()
     benchmark_summary = benchmark_node.calculate_error_metrics()
-    rospy.loginfo("All {0} scenes are done.".format(scene))
+    rospy.loginfo("All {0} scenes are done.".format(scene + 1))
     return BenchmarkResponse(benchmark_summary)
 
 
