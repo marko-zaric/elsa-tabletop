@@ -1,6 +1,6 @@
 # ELSA Benchmark 
 
-This package is a benchmark for testing the accurracy level of the **ELSA Perception** package in simulation. It uses standard gazebo topics to spawn for different primary shapes (cube, rectangle, cylinder, sphere) and a custom-made .sdf file modifier in order to randomize the size and color of the primary shapes.
+This package is a benchmark for testing the accurracy level of the **ELSA Perception** package in simulation. It uses standard gazebo topics to spawn four different primary shapes (cube, rectangle, cylinder, sphere) and a custom-made .sdf file modifier in order to randomize the size and color of the primary shapes.
 
 ## Usage
 
@@ -25,21 +25,21 @@ The *benchmark.launch* file starts the following services:
 Here are two example usages for the */benchmark/perception_benchmark* service:
 
 ```bash
-    rosservice call rosservice call /benchmark/perception_benchmark 200 1 rectangle True "/home/user/benchmark/"
+    rosservice call /benchmark/perception_benchmark 200 1 rectangle True "/home/user/benchmark/"
 ```
 
 ![Alt Text](doc_media/benchmark_1.gif)
 
 
 ```bash
-    rosservice call rosservice call /benchmark/perception_benchmark 100 2 sphere False "I will be ingnored because save benchmark is set to false." 
+    rosservice call /benchmark/perception_benchmark 100 2 sphere False "I will be ingnored because save benchmark is set to false." 
 ```
 
 ## Return values
 
 ### */benchmark/perception_benchmark* service
 
-This service once done returns a error summary with following metrics:
+This service returns a error summary upon completion with following metrics:
 
 - mean error
 - std error
