@@ -25,7 +25,10 @@ The properties are divided into surface and spatial features.
     and variance information.
 '''
 
-MEAN_PANDA_FOOT = np.array([ 0.01781263, -0.46853645,  0.04416075])
+def panda_foot_parabola(xyz):
+    return ((-7.839*(xyz[:,0]**2) + 0.274*xyz[:,0]-0.44) <= xyz[:,1])
+
+# MEAN_PANDA_FOOT = np.array([ 0.01781263, -0.46853645,  0.04416075])
 
 COLOR_SEGMENTATION = True
 
@@ -65,15 +68,34 @@ class PointCloudScene:
             self.xyz, self.hsv = remove_plane(self.xyz, hsv, 0.01)
         else:
             self.xyz[:,2] = 1.001 - xyz[:,2]
+            # remove panda foot
+            panda_foot_detection = panda_foot_parabola(self.xyz)
+            self.xyz = self.xyz[panda_foot_detection]
+            if hsv is not None:
+                self.hsv = self.hsv[panda_foot_detection]
+
+
 
         benchmark.append(time.time())
 
         dbscan = DBSCAN(eps=0.022, min_samples=6) 
         dbscan.fit(self.xyz)
         self.dbscan_labels = dbscan.labels_
-
         labels_set = set(dbscan.labels_)
-        benchmark.append(time.time())
+        # print("objects detected:", len(labels_set))
+        # fig = plt.figure()
+        # axis = fig.add_subplot(111, projection='3d')
+        # add_image_bounding_pixels(axis, np.array([-0.3, -0.3, 0]), np.array([0.3, 0.3, 0.3]))
+        # axis.scatter(self.xyz[:,0], 
+        #              self.xyz[:,1], 
+        #              self.xyz[:,2], 
+        #              s=20,
+        #              c = self.dbscan_labels
+        #              )
+        # plt.show()
+        # exit()
+
+        
 
         benchmark.append(time.time())
         objects = []
@@ -96,15 +118,27 @@ class PointCloudScene:
         # for i in range(len(benchmark)-1):
         #     print("Milestone ", i , " time: ", benchmark[i+1]-benchmark[i])
 
-        for i, obj in enumerate(objects):
-            # Remove Panda foot from object list (sim mean corrdinates at the moment)
-            if np.linalg.norm(np.array(obj).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
-                if len(obj) > 10:
-                    if hsv is None:
-                        self.objects_in_scene.append(PointCloudObject(obj))
-                    else:
-                        self.objects_in_scene.append(PointCloudObject(obj, objects_color[i]))
         
+        for i, obj in enumerate(objects):
+            # if np.linalg.norm(np.array(obj).mean(axis=0) - MEAN_PANDA_FOOT) > 0.01:
+            if len(obj) > 10:
+                if hsv is None:
+                    self.objects_in_scene.append(PointCloudObject(obj))
+                else:
+                    self.objects_in_scene.append(PointCloudObject(obj, objects_color[i]))
+
+        # min_x = np.min(foot.xyz_points[:,0])
+        # min_y = np.min(foot.xyz_points[:,1])
+        # max_x = np.max(foot.xyz_points[:,0])
+        # max_y = np.max(foot.xyz_points[:,1])
+        # print("Max x", max_x)
+        # print("Min x", min_x)
+        # print("Max y", max_y)
+        # print("Min y", min_y)
+        # corner_right = np.array([max_x, min_y, 0.0])
+        # corner_left = np.array([min_x, min_y, 0.0])
+        # corner_top = np.array([foot.xyz_points[np.argmax(foot.xyz_points[:,1])][0], max_y, 0.0])
+ 
         '''
         If color segmentation is on and objects have color values:
         Perform h-space color clustering to detect objects which are pressed up against each other.
