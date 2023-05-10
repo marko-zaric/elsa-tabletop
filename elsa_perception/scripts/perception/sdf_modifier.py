@@ -5,17 +5,10 @@ from elsa_object_database.srv import RegisteredObjects
 
 
 class SDFmodifier:
-    def __init__(self):
-        rospy.loginfo("Waiting for get_registered_obj_service")
-        rospy.wait_for_service("get_registered_obj_service")
+    def __init__(self, registered_objects):
         self.registered_objs = []
-        try:
-            get_registered_objs = rospy.ServiceProxy("get_registered_obj_service", RegisteredObjects)
-            response = get_registered_objs()
-            for obj in response.registered_objects:
-                self.registered_objs.append([obj.object_name, obj.gazebo_color, obj.r_value, obj.g_value, obj.b_value, obj.alpha_value])
-        except rospy.ServiceException as e:
-            print("Registered Objects Service failed %s", e)
+        for obj in registered_objects.registered_objects:
+            self.registered_objs.append([obj.object_name, obj.gazebo_color, obj.r_value, obj.g_value, obj.b_value, obj.alpha_value])
 
     def set_color(self, sdf_xml, color):
         stringroot = ET.fromstring(sdf_xml)

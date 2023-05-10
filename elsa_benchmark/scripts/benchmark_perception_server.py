@@ -49,7 +49,7 @@ class BenchmarkPerception:
 
         self.rp = RosPack()
 
-        self.sdf_randomizer = SDFmodifier()
+        # self.sdf_randomizer = SDFmodifier()
 
         self.OBJECT_LIST = ["cube", "rectangle", "sphere", "cylinder"]
 
@@ -77,7 +77,7 @@ class BenchmarkPerception:
         
         rospy.wait_for_service('get_registered_obj_service')
         get_registered_objs = rospy.ServiceProxy("get_registered_obj_service", RegisteredObjects)
-        registered_objects = get_registered_objs()
+        self.registered_objects = get_registered_objs()
         # Eval metrics
         self.total_errors = {'x_error': [],
                              'y_error': [],
@@ -93,7 +93,7 @@ class BenchmarkPerception:
                                 '4': copy.deepcopy(self.total_errors)}
         
         self.color_errors = {}
-        for reg_obj in registered_objects.registered_objects:
+        for reg_obj in self.registered_objects.registered_objects:
             self.color_errors[reg_obj.object_name] = copy.deepcopy(self.total_errors)
 
         self.total_errors['all_objs_detected'] = []
@@ -352,13 +352,14 @@ def callback(request):
                                          request.object_type,
                                          request.save_benchmark,
                                          request.out_folder)
+    
     rospy.loginfo('Perception Benchmarking with %d scenarios' % (benchmark_node.number_of_scenes))
     # evaluation loop
     scene = 0
     while not rospy.is_shutdown() and scene < benchmark_node.number_of_scenes:  
         rospy.logwarn('---------------------')
         rospy.logwarn('Scene: {0}'.format(scene + 1))
-        benchmark_node.sdf_randomizer = SDFmodifier()
+        benchmark_node.sdf_randomizer = SDFmodifier(benchmark_node.registered_objects)
         GT_poses = benchmark_node.new_scene()
         rospy.sleep(2)
         rospy.loginfo('New scene created')
