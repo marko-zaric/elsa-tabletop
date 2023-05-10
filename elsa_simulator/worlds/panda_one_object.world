@@ -1,0 +1,108 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+
+    <!--light type="directional" name="light">
+      <light_on>true</light_on>
+      <pose>0 0 2 0 0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>.1 .1 .1 1</specular>
+      <cast_shadows>false</cast_shadows>
+    </light-->
+
+
+    <include> 
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <include>
+      <uri>model://big_table</uri>
+      <name>table</name>
+      <pose>0.5 0 0 0 0 0</pose>
+    </include>
+
+    <!-- Push coke -->
+    <!-- <include>
+      <uri>model://coke_can_red</uri>
+      <name>canpoint</name>
+      <pose>0.6 0 1.03 0 0 0</pose>
+    </include> -->
+
+    <!-- Point coke -->
+    <!-- <include>
+      
+      <uri>model://coke_can_red</uri>
+      <name>canpoint</name>
+      <pose>0.8 0.5 1.03 0 0 0</pose>
+    </include> -->
+
+    <!--
+    <include>
+      <uri>model://coke_can_red</uri>
+      <name>can2</name>
+      <pose>0.3 0.3 1.03 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://pink_can</uri>
+      <pose>0.3 0.0 1.03 0 0 0</pose>
+      <name>can1</name>
+    </include>
+
+    <include>
+      <name>cube_small</name>
+      <uri>model://cube_5cm</uri>
+      <pose>0.3 -0.3 1.03 0 0 0.7</pose>
+    </include>
+    -->
+
+    <include>
+      <name>cube_large_blue</name>
+      <uri>model://cube_large_blue</uri>
+      <pose>0.4 -0.0 1.03 0 0 0</pose>
+    </include>
+
+    <!-- <include>
+      <name>cube_large_green</name>
+      <uri>model://cube_large_green</uri>
+      <pose>0.475 -0.15 1.03 0 0 0</pose>
+    </include> -->
+    
+    <!--
+    <include>
+      <name>rectangle_indigo</name>
+      <uri>model://rectangle_indigo</uri>
+      <pose>0.6 -0.2 1.03 0 0 0.5</pose>
+    </include>
+
+
+    <include>
+      <name>rectangle_yellow</name>
+      <uri>model://rectangle_yellow</uri>
+      <pose>0.7 0.2 1.03 0 0 1.7</pose>
+    </include>
+    -->
+
+    <!-- <include>
+      <name>marko</name>
+      <uri>model://person_standing</uri>
+      <pose>2.1 0 0 0 0 -1.4</pose>
+    </include> -->
+
+    <physics type="ode">
+      <real_time_update_rate>1000.0</real_time_update_rate>
+    </physics>
+    
+    <gravity>
+      0.0 0.0 -9.81
+    </gravity>
+
+    <gui fullscreen='0'>
+    </gui>
+
+  </world>
+</sdf>
