@@ -1,0 +1,37 @@
+# This is an example filter config for tracked vehicle Absolem from Czech Technical University's
+# VRAS team. The robot is equipped with a Realsense D435.
+# The field of view of the sensor can only capture a few links, so the `only_links` parameter is set
+# to increase performance. Also, the `filter/keep_clouds_organized` parameter is important here to
+# retain the 2D structure of the RGBD camera output.
+# https://github.com/peci1/robot_body_filter
+cloud_filter_chain:
+  - name: RobotBodyFilter
+    type: robot_body_filter/RobotBodyFilterPointCloud2
+    params:
+      frames/sensor: 'camera_depth_optical_frame'
+      frames/filtering: 'base'
+      frames/output: 'camera_depth_optical_frame'
+      filter/keep_clouds_organized: True
+      filter/do_clipping: True
+      filter/do_contains_test: True
+      filter/do_shadow_test: False
+      sensor/point_by_point: False
+      sensor/min_distance: 0.2
+      sensor/max_distance: 10.0
+      only_links: ["panda_link6"]
+      ignored_links/everywhere: ["panda_link0", "panda_hand", "panda_leftfinger", "panda_rightfinger", "panda_link1", "panda_link2", "panda_link3", "panda_link4", "panda_link5", "panda_link7"]
+      body_model/inflation/scale: 1.1
+      body_model/inflation/padding: 0.05
+      body_model/robot_description_param: '/robot_description'
+      transforms/buffer_length: 15.0
+      transforms/timeout/reachable: 0.2
+      transforms/timeout/unreachable: 0.2
+      bounding_sphere/compute: False
+      bounding_box/compute: False
+      oriented_bounding_box/compute: False
+      local_bounding_box/compute: False
+      debug/pcl/inside: True
+      debug/pcl/clip: False
+      debug/pcl/shadow: False
+      debug/marker/contains: True
+      debug/marker/shadow: False

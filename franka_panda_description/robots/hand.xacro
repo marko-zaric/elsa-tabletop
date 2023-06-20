@@ -13,7 +13,7 @@
       </joint>
     </xacro:unless>
     <link name="${ns}_hand">
-      <visual>
+      <!-- <visual>
         <geometry>
           <mesh filename="package://franka_panda_description/meshes/visual/hand.dae"/>
         </geometry>
@@ -22,7 +22,7 @@
         <geometry>
           <mesh filename="package://franka_panda_description/meshes/collision/hand.stl"/>
         </geometry>
-      </collision>
+      </collision> -->
       <inertial>
         <origin rpy="0 0 0" xyz="0 0.0015244 0.0275912"/>
         <mass value="0.73"/>
@@ -30,7 +30,7 @@
       </inertial>
     </link>
     <link name="${ns}_leftfinger">
-      <visual>
+      <!-- <visual>
         <geometry>
           <mesh filename="package://franka_panda_description/meshes/visual/finger.dae"/>
         </geometry>
@@ -39,7 +39,7 @@
         <geometry>
           <mesh filename="package://franka_panda_description/meshes/collision/finger.stl"/>
         </geometry>
-      </collision>
+      </collision> -->
       <inertial>
         <origin rpy="0 0 0" xyz="0 0.0145644 0.0227941"/>
         <mass value="0.1"/>
@@ -47,7 +47,7 @@
       </inertial>
     </link>
     <link name="${ns}_rightfinger">
-      <visual>
+      <!-- <visual>
         <origin xyz="0 0 0" rpy="0 0 ${pi}"/>
         <geometry>
           <mesh filename="package://franka_panda_description/meshes/visual/finger.dae"/>
@@ -58,7 +58,7 @@
         <geometry>
           <mesh filename="package://franka_panda_description/meshes/collision/finger.stl"/>
         </geometry>
-      </collision>
+      </collision> -->
       <inertial>
         <origin rpy="0 0 3.141592653589793" xyz="0 -0.0145644 0.0227941"/>
         <mass value="0.1"/>

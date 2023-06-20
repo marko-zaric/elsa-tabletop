@@ -23,5 +23,10 @@
     <param name="color_on" value="$(arg color_on)"/>
     <param name="register_objects" value="$(arg register_objects)"/>
   </node>
+
+
+  <!-- Self occlusion node -->
+
+  <include file="$(find elsa_simulator)/launch/self_occlusion.launch"/>
   
 </launch>

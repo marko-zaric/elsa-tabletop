@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Prerequisite: sensor_filters -->
+    <!-- http://wiki.ros.org/sensor_filters -->
+    <node name="rgbd_filter" pkg="sensor_filters" type="pointcloud2_filter_chain" output="screen">
+        <rosparam command="load" file="$(dirname)/self_occlusion_config.yaml" />
+        <remap from="~input" to="/downsample/output" /> 
+        <remap from="~output" to="pc_self_occlusion" />
+    </node>
+</launch>

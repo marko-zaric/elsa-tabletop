@@ -26,8 +26,7 @@ def callback(data):
 
 def listener():
     rospy.init_node("read_cam_data", anonymous=True)
-    rospy.Subscriber("/downsample/output", PointCloud2, callback=callback)
-
+    rospy.Subscriber("pc_self_occlusion", PointCloud2, callback=callback) #/downsample/output
     pub = rospy.Publisher('/scene_description', PhysicalScene, queue_size=1)
     scene_stamped_pub = rospy.Publisher('/scene_description_stamped', PhysicalSceneStamped, queue_size=1)
     fullscene_stamped_pub = rospy.Publisher('/fullscene', FullSceneStamped, queue_size=1)
@@ -35,12 +34,12 @@ def listener():
     pub_cluster = rospy.Publisher('elsa_perception/clustered_pointcloud', ClusteredPointcloud , queue_size=1)
 
     while not rospy.is_shutdown():
-        rospy.wait_for_message("/downsample/output", PointCloud2)
+        rospy.wait_for_message("pc_self_occlusion", PointCloud2)
         gen = pc2.read_points(DATA_CALLBACK, skip_nans=True, field_names=("x", "y", "z", "rgb"))
         count_points = 0
 
-        xyz = np.zeros((DATA_CALLBACK.width, 3))
-        color = np.zeros((DATA_CALLBACK.width, 3))
+        xyz = np.zeros((DATA_CALLBACK.width+1, 3))
+        color = np.zeros((DATA_CALLBACK.width+1, 3))
         for point in gen:
             if ENABLE_COLOR:
                 rgb_float = point[3]
@@ -65,7 +64,7 @@ def listener():
             
 
             count_points += 1
-
+        
         if SAVE_POINT_CLOUD:
             np.save("/home/marko/Desktop/IIS_Research/xyz.npy", xyz)
             if ENABLE_COLOR:
@@ -77,6 +76,7 @@ def listener():
 
         PC = PointCloudScene(debug=True, register_objects=REGISTER_OBJECTS)
         if not (xyz.shape == (0,3) or color.shape == (0,3)):
+            print(count_points)
             PC.detect_objects(xyz, color)
             PC.create_bounding_boxes()
             PC.calculate_surface_features()

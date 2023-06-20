@@ -17,3 +17,6 @@
 	path = realsense-ros
 	url = https://github.com/IntelRealSense/realsense-ros.git
 	branch = ros1-legacy
+[submodule "robot_body_filter"]
+	path = robot_body_filter
+	url = https://github.com/peci1/robot_body_filter.git

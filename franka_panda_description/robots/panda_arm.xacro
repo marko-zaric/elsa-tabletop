@@ -144,7 +144,7 @@
       <dynamics damping="1.0" friction="0.5"/>
     </joint>
     <link name="${arm_id}_link5">
-      <visual>
+      <!-- <visual>
         <geometry>
           <mesh filename="package://${description_pkg}/meshes/visual/link5.dae"/>
         </geometry>
@@ -153,7 +153,7 @@
         <geometry>
           <mesh filename="package://${description_pkg}/meshes/collision/link5.stl"/>
         </geometry>
-      </collision>
+      </collision> -->
       <inertial>
         <origin xyz="-1.1953e-02 4.1065e-02 -3.8437e-02" rpy="0 0 0"/>
         <mass value="1.225946"/>
@@ -176,9 +176,13 @@
         </geometry>
       </visual>
       <collision>
-        <geometry>
+        <!-- <geometry>
           <mesh filename="package://${description_pkg}/meshes/collision/link6.stl"/>
+        </geometry> -->
+         <geometry>
+          <box size="0.1 0.07 0.06"/>
         </geometry>
+        <origin rpy="0 0 0" xyz="0.04 0.01 0.0"/>
       </collision>
       <inertial>
         <origin xyz="6.0149e-02 -1.4117e-02 -1.0517e-02" rpy="0 0 0"/>
@@ -196,7 +200,7 @@
       <dynamics damping="1.0" friction="0.5"/>
     </joint>
     <link name="${arm_id}_link7">
-      <visual>
+      <!-- <visual>
         <geometry>
           <mesh filename="package://${description_pkg}/meshes/visual/link7.dae"/>
         </geometry>
@@ -205,7 +209,7 @@
         <geometry>
           <mesh filename="package://${description_pkg}/meshes/collision/link7.stl"/>
         </geometry>
-      </collision>
+      </collision> -->
       <inertial>
         <origin xyz="1.0517e-02 -4.252e-03 6.1597e-02" rpy="0 0 0"/>
         <mass value="7.35522e-01"/>
