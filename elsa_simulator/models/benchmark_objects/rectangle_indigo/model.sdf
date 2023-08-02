@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <sdf version='1.7'>
-  <model name='rectangle1'>
+  <model name='rectangle_indigo'>
     <link name='link'>
       <inertial>
         <mass>5</mass>

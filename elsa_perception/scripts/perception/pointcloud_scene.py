@@ -264,48 +264,48 @@ class PointCloudScene:
             var_h_space = np.var(h_space, axis=0)[0] + np.var(h_space, axis=0)[1]
             mean_h_spaces.append(mean_h_space)
             var_h_spaces.append(var_h_space)
-        
-        mean_h_spaces = np.array(mean_h_spaces)
-        dist_mat = distance_matrix(self.registered_objs_values,mean_h_spaces)
+        if len(mean_h_spaces) > 0:
+            mean_h_spaces = np.array(mean_h_spaces)
+            dist_mat = distance_matrix(self.registered_objs_values,mean_h_spaces)
 
-        # axis 1 registered objects perspective
-        # axis 0 observed objects perspective
-        min_dists = np.min(dist_mat, axis=0)
-        min_dists_idx = np.argmin(dist_mat, axis=0)
-        reg_obj_ids, counts = np.unique(min_dists_idx, return_counts=True)
-        count_dict = dict(zip(reg_obj_ids, counts))
-        
-        labels = {}
-        for i in range(len(self.registered_objs)):
-            if i in count_dict:
-                if count_dict[i] == 1:
-                    labels[np.where(min_dists_idx == i)[0][0]] = self.registered_objs[i]
-                if count_dict[i] > 1:
-                    conflicting_objects = np.where(min_dists_idx == i)[0]
-                    # print("CONFLICTING OBJECTS")
-                    # print(conflicting_objects)
-                    # print(np.where(min_dists_idx == i))
-                    min_var = 1000
-                    min_var_idx = -1
-                    for indx in conflicting_objects:
-                        if min_dists[indx] < 0.02: # exclude objects that do not lie in a certain cricle around the mean
-                            if min_var > var_h_spaces[indx]:
-                                min_var = var_h_spaces[indx]
-                                min_var_idx = indx
-                    labels[min_var_idx] = self.registered_objs[i]
-                    for i in conflicting_objects:
-                        if i == min_var_idx:
-                            continue
-                        #labels[i] = "High variance dropped out!"
-                        labels[i] = "Ignore"
-            else:
-                # Catch case more registered objects than percieved objects
-                if (i in min_dists_idx):
-                    labels[np.where(min_dists_idx == i)[0][0]] = "Unregistered Object!"              
+            # axis 1 registered objects perspective
+            # axis 0 observed objects perspective
+            min_dists = np.min(dist_mat, axis=0)
+            min_dists_idx = np.argmin(dist_mat, axis=0)
+            reg_obj_ids, counts = np.unique(min_dists_idx, return_counts=True)
+            count_dict = dict(zip(reg_obj_ids, counts))
 
-        for i, obj in enumerate(self.objects_in_scene):
-            if labels[i] != "Ignore":
-                list_physical_features.append(obj.create_physical_features_msg(labels[i], self.register_objects))
+            labels = {}
+            for i in range(len(self.registered_objs)):
+                if i in count_dict:
+                    if count_dict[i] == 1:
+                        labels[np.where(min_dists_idx == i)[0][0]] = self.registered_objs[i]
+                    if count_dict[i] > 1:
+                        conflicting_objects = np.where(min_dists_idx == i)[0]
+                        # print("CONFLICTING OBJECTS")
+                        # print(conflicting_objects)
+                        # print(np.where(min_dists_idx == i))
+                        min_var = 1000
+                        min_var_idx = -1
+                        for indx in conflicting_objects:
+                            if min_dists[indx] < 0.02: # exclude objects that do not lie in a certain cricle around the mean
+                                if min_var > var_h_spaces[indx]:
+                                    min_var = var_h_spaces[indx]
+                                    min_var_idx = indx
+                        labels[min_var_idx] = self.registered_objs[i]
+                        for i in conflicting_objects:
+                            if i == min_var_idx:
+                                continue
+                            #labels[i] = "High variance dropped out!"
+                            labels[i] = "Ignore"
+                else:
+                    # Catch case more registered objects than percieved objects
+                    if (i in min_dists_idx):
+                        labels[np.where(min_dists_idx == i)[0][0]] = "Unregistered Object!"              
+
+            for i, obj in enumerate(self.objects_in_scene):
+                if labels[i] != "Ignore":
+                    list_physical_features.append(obj.create_physical_features_msg(labels[i], self.register_objects))
 
         physical_scene = PhysicalScene(physical_scene=list_physical_features, number_of_objects=len(self.objects_in_scene))
 

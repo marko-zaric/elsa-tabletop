@@ -41,26 +41,26 @@
     </include> -->
 
     <include>
-      <uri>model://coke_can_red</uri>
-      <name>can2</name>
+      <uri>model://benchmark_objects/can_red</uri>
+      <name>can_red</name>
       <pose>0.3 0.3 1.03 0 0 0</pose>
     </include>
 
     <include>
-      <uri>model://pink_can</uri>
+      <uri>model://benchmark_objects/can_pink</uri>
       <pose>0.3 0.0 1.03 0 0 0</pose>
-      <name>can1</name>
+      <name>can_pink</name>
     </include>
 
     <include>
-      <name>cube_small</name>
-      <uri>model://cube_5cm</uri>
+      <name>cube_turquoise</name>
+      <uri>model://benchmark_objects/cube_turquoise</uri>
       <pose>0.3 -0.3 1.03 0 0 0.7</pose>
     </include>
 
     <include>
       <name>cube_large_blue</name>
-      <uri>model://cube_large_blue</uri>
+      <uri>model://benchmark_objects/cube_large_blue</uri>
       <pose>0.4 -0.15 1.03 0 0 0</pose>
     </include>
 
@@ -72,14 +72,14 @@
     
     <include>
       <name>rectangle_indigo</name>
-      <uri>model://rectangle_indigo</uri>
+      <uri>model://benchmark_objects/rectangle_indigo</uri>
       <pose>0.6 -0.2 1.03 0 0 0.5</pose>
     </include>
 
 
     <include>
       <name>rectangle_yellow</name>
-      <uri>model://rectangle_yellow</uri>
+      <uri>model://benchmark_objects/rectangle_yellow</uri>
       <pose>0.7 0.2 1.03 0 0 1.7</pose>
     </include>
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <model name="coke_can">
+  <model name="can_pink">
     <link name="link">
       <inertial>
         <pose>0 0 0.06 0 0 0</pose>

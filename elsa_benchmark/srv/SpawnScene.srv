@@ -1,0 +1,4 @@
+string benchmark_file
+int32 scene
+---
+bool success
