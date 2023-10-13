@@ -21,5 +21,3 @@ Some colors are predefined Gazebo Colors which in turn are stored like this:
 | 0            | Object Label| String|
 | 1            | HSV H-value | Float |
 | 2            | Gazebo Color string | String |
-
-## Perception pipeline

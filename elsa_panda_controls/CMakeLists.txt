@@ -66,11 +66,11 @@ catkin_install_python(PROGRAMS scripts/node_gazebo_model_states_read.py
                       scripts/node_gazebo_test_joint_movement.py
                       scripts/node_gazebo_single_joint_control.py
                       scripts/node_gazebo_joint_configuration_server.py
-                      scripts/node_gazebo_joint_client.py
                       # GESTURES
                       scripts/node_gazebo_pass_gesture.py
                       scripts/node_gazebo_point_gesture.py
                       scripts/node_gazebo_grabby_motion.py
+                      # Other
                       scripts/node_moveit_inverse_kinematics.py
                       scripts/node_ik_client_demo.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

@@ -17,19 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 publish_rate = 100
 
-JACOBIAN = None
 CARTESIAN_POSE = None
-CARTESIAN_VEL = None
-
-def _on_robot_state(msg):
-    """
-        Callback function for updating jacobian and EE velocity from robot state
-    """
-    global JACOBIAN, CARTESIAN_VEL
-    JACOBIAN = np.asarray(msg.O_Jac_EE).reshape(6,7,order = 'F')
-    CARTESIAN_VEL = {
-                'linear': np.asarray([msg.O_dP_EE[0], msg.O_dP_EE[1], msg.O_dP_EE[2]]),
-                'angular': np.asarray([msg.O_dP_EE[3], msg.O_dP_EE[4], msg.O_dP_EE[5]]) }
 
 def _on_endpoint_state(msg):
     """
@@ -47,9 +35,8 @@ def _on_shutdown():
     """
         Clean shutdown controller thread when rosnode dies.
     """
-    global cartesian_state_sub, robot_state_sub
+    global cartesian_state_sub
 
-    robot_state_sub.unregister()
     cartesian_state_sub.unregister()
 
 if __name__ == "__main__":
@@ -64,27 +51,18 @@ if __name__ == "__main__":
         queue_size=1,
         tcp_nodelay=True)
 
-    robot_state_sub = rospy.Subscriber(
-        'panda_simulator/custom_franka_state_controller/robot_state',
-        RobotState,
-        _on_robot_state,
-        queue_size=1,
-        tcp_nodelay=True)
 
 
     # wait for messages to be populated before proceeding
     rospy.loginfo("Subscribing to robot state topics...")
-    while (True):
-        if not (JACOBIAN is None or CARTESIAN_POSE is None):
-            break
-    rospy.loginfo("Recieved messages; Starting Demo.")
-    
     rospy.on_shutdown(_on_shutdown)
     rate = rospy.Rate(publish_rate)
-
+     
     while not rospy.is_shutdown():
-        rospy.loginfo("Position:")
-        rospy.loginfo(CARTESIAN_POSE["position"])
-        rospy.loginfo("Orientation:")
-        rospy.loginfo(CARTESIAN_POSE["orientation"])
-        rospy.spin()    
+        if CARTESIAN_POSE is not None:
+            rospy.loginfo("Position:")
+            rospy.loginfo(CARTESIAN_POSE["position"])
+            rospy.loginfo("Orientation:")
+            rospy.loginfo(CARTESIAN_POSE["orientation"])
+        else:
+            rospy.loginfo("Cartesian pose is empty!")

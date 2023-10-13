@@ -59,6 +59,43 @@ The Gazebo simulator is based on the GitHub package [*Panda Simulator*][pandasim
     catkin build # if catkin not found, install catkin tools (apt install python-catkin-tools)
     source devel/setup.bash
 ```
+## Overview
+This package contains several subpackages for convenient use. All packages starting with *elsa_<name\>* are packages specifially developed for this research project and aim to solve separate problems or tasks.
+
+| Package | Description |
+| ------ | ------ |
+| elsa_benchmark | Benchmark package specifically designed for benchmarking *elsa_perception* |
+| elsa_object_database | A collection of registered colored objects to help track feature changes |
+| elsa_panda_controls | A collection of nodes and serices with the purpose of easy control in joint and cartesian space |
+| elsa_perception | Package containing nodes for obtaining point cloud information of the real IntelRealSense camera or the Gazebo simulated one and subsequent object segmentation  |
+| elsa_perception_msgs | ROS messages used by the *elsa_perception* package |
+| elsa_simulator | Package dedicated to the simulation of the setup in Gazebo including launch and world files as well as object models. |
+| elsa_training_data_generation | Data generation package for SVM training currently only for object detection based on feature vectors described in the Uyanik paper |
+
+Inherited Packages from GitHub package [*Panda Simulator*][pandasim-repo]:
+
+| Package | Description |
+| ------ | ------ |
+| franka_panda_description | Robot description package modified from franka_ros package to include dynamics parameters for the robot arm and gripper for simulating the behaviour of the real robot. |
+| panda_gazebo | Package dedicated to the simulation of the Franka Emika Panda in Gazebo including launch and world files as well as object models. |
+| panda_hardware_interface | See GitHub package [*Panda Simulator*][pandasim-repo] |
+| panda_sim_controllers | See GitHub package [*Panda Simulator*][pandasim-repo] |
+| panda_sim_custom_action_server |  |
+| panda_sim_moveit | See GitHub package [*Panda Simulator*][pandasim-repo] |
+| panda_simulator | See GitHub package [*Panda Simulator*][pandasim-repo] |
+| panda_simulator_examples | See GitHub package [*Panda Simulator*][pandasim-repo] |
+
+Submodules:
+
+| Package | Description |
+| ------ | ------ |
+| franka_ros | The Franka Control Interface (FCI) allows a fast and direct low-level bidirectional connection to the Arm and Hand. It provides the current status of the robot and enables its direct control with an external workstation PC connected via Ethernet. |
+| franka_ros_interface | A ROS interface library for the Franka Emika Panda robot (real and simulated), extending the franka-ros library to expose more information about the robot, and providing low-level control of the robot using ROS and Python API. |
+| orocos_kinematics_dynamics | Orocos project to supply RealTime usable kinematics and dynamics code, it contains code for rigid body kinematics calculations and representations for kinematic structures and their inverse and forward kinematic solvers. |
+| panda_moveit_config | The Panda robot is the flagship MoveIt integration robot used in the MoveIt tutorials. Any changes to MoveIt need to be propagated into this config fast, so this package is co-located under the ros-planning |
+| realsense-ros |  Intel RealSense ROS1 Wrapper |
+| realsense_gazebo_plugin | This package is a Gazebo ROS plugin for the Intel D435 realsense camera. |
+
 
 ## Usage
 To use this package with the Gazebo simulation or the real-world scenario different launch procedures are in place.

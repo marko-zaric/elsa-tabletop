@@ -12,7 +12,6 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--position", required=False, help="Position of the center of object where to point at.", type=float, nargs="+", default=[0.5, 0, 0.03])
-parser.add_argument("-o", "--orientation", required=False, help="orients robot arm just enter quaternion as float numbers", type=float, nargs="+", default=[0.0, -1.0, 0.0, 0.0])
 args = parser.parse_args()
 # -------------------------------------------------
 # --------- Modify as required ------------
