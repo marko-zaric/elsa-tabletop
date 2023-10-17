@@ -46,9 +46,24 @@ The read camera node creates a custom object `PointCloudScene` which has multipl
 
 ### 3. Bounding box
 
-### 4. Surface features 
+The bounding box calculation is called by calling the method `create_bounding_boxes` on the `PointCloudScene` instance which in turn calls the `compute_bounding_box` method for each percieved object in the scene. The method `compute_bounding_box` of the `PointCloudObject` class calculates the center of each object as well as the bounding box dimensions and its z-Axis angle for orientation. It performs the following steps sequentially:
 
-### 5. Shape indizes
+1. Determine if the object is circular (orientation can be disregarded z angle is always 0)
+2. Calculate the center of the object
+3. Calculate the bounding box dimensions
+4. If object is not circular calculate the orientation of the object
+
+### 4. Surface features & Shape indizes
+
+For the surface feature calculation the method `calculate_surface_features` of he `PointCloudScene` instance is called which in turn calls the `compute_surface_normals` method for each object in the scene. In order to have the same representation of surface conditions as in scenario in the paper [*Learning Social Affordances and Using Them for Planning by Uyanik et. al (2013)*][uyanik-paper] It calls the service `calculate_surface_features` which is the service as can be found in the [*Uyanik et. al (2013)*][uyanik-paper] work ([*GitRepo*][uyanik-code]). 
+
+This service returns a 20 bin histogram for the following features:
+
+1. surface normals azimut
+2. surface normals zenith
+3. minimal curvature
+4. maximal curvature
+5. shape indizes
 
 [pandasim-repo]: <https://github.com/justagist/panda_simulator>
 
@@ -58,3 +73,6 @@ The read camera node creates a custom object `PointCloudScene` which has multipl
 
 [dbscan]: <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html>
 
+[uyanik-paper]: <https://escholarship.org/content/qt9cj412wg/qt9cj412wg.pdf>
+
+[uyanik-code]: <https://github.com/kadiru/metu-ros-pkg>

@@ -82,8 +82,13 @@ If the flag for saving the benchmark is set to true a .csv file will created at 
 | gt_round | bool | Flag is true if the ground truth object is round in the xy-plane |
 | round | bool | Flag is true if the percieved object is round in the xy-plane |
 
-> [!WARNING]
-> If the object was not percieved all the non-ground truth values will remain empty!
+<div class="panel panel-warning">
+**Warning**
+{: .panel-heading}
+<div class="panel-body">
+If the object was not percieved all the non-ground truth values will remain empty!
 
+</div>
+</div>
 
 
