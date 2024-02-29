@@ -141,8 +141,6 @@ This project is licensed under a Creative Commons Attribution 4.0 International 
 ### Acknowledgements
 This research was funded in whole or in part by the Austrian Science Fund (FWF) [ELSA, DOI: 10.55776/I5755]. For open access purposes, the author has applied a CC BY public copyright license to any author accepted manuscript version arising from this submission.
 
-Copyright (c) -2022-2023, IIS Intelligent and Interactive Systems Group University of Innsbruck
-
    [fri-repo]: <https://github.com/justagist/franka_ros_interface>
    [pd_simulator-repo]: <https://github.com/justagist/franka_panda_description>
    [pandasim-repo]: <https://github.com/justagist/panda_simulator>
